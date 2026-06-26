@@ -132,6 +132,34 @@
   .cal-empty-names { color: #c4cbd6; }
   .legend { font-size: 11.5px; color: #98a2b3; margin-top: 10px; text-align: center; line-height: 1.7; }
 
+  /* ── 일정표 보기 전환 토글 ── */
+  .view-toggle { display: flex; gap: 5px; background: #eef2f7; padding: 4px; border-radius: 10px; margin: 0 auto 14px; max-width: 240px; }
+  .view-toggle button {
+    flex: 1; padding: 7px; border: none; background: transparent; border-radius: 7px;
+    font-size: 13px; font-weight: 600; color: #8a94a6; cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .view-toggle button.on { background: #fff; color: #2d6cdf; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+  /* ── 일자별 리스트 보기 ── */
+  .day-card { border: 1px solid #e7edf3; border-radius: 12px; overflow: hidden; margin-bottom: 11px; }
+  .day-card-head {
+    display: flex; align-items: baseline; gap: 8px; padding: 9px 13px;
+    background: #f7f9fc; border-bottom: 1px solid #e7edf3;
+  }
+  .day-card-head .dnum { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+  .day-card-head .dnum.sun { color: #e0533d; }
+  .day-card-head .dnum.sat { color: #3d72e0; }
+  .day-card-head .dlabel { font-size: 12.5px; color: #98a2b3; }
+  .day-row { display: flex; align-items: flex-start; gap: 9px; padding: 9px 13px; border-top: 1px solid #f1f4f8; }
+  .day-row:first-child { border-top: none; }
+  .day-row .ticon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+  .day-row .tinfo { flex: 1; }
+  .day-row .tname { font-size: 13px; font-weight: 700; color: #5b6b85; }
+  .day-row .tname.full { color: #1d9d6f; }
+  .day-row .tcount { font-size: 11.5px; color: #98a2b3; font-weight: 500; margin-left: 5px; }
+  .day-row .tnames { font-size: 13px; color: #475467; line-height: 1.6; margin-top: 2px; word-break: break-all; }
+  .day-row .tnames.empty { color: #c4cbd6; }
+
   @media (max-width: 480px) {
     .day-grid { grid-template-columns: repeat(5, 1fr); gap: 5px; }
     .day-dom { font-size: 14px; }
@@ -194,6 +222,7 @@ let submitted = null;
 let form = { name:"", day:"", time:"" };
 let errors = {};
 let copyDay = DAYS[0].key;
+let scheduleMode = "cal";   // "cal"=달력 / "list"=일자별
 
 function slotCap(sk){ const s=slots[sk]; return (s&&s.cap)?s.cap:DEFAULT_CAP; }
 function slotEntries(sk){ const s=slots[sk]; return (s&&s.entries)?s.entries:{}; }
@@ -318,8 +347,28 @@ function renderSuccess(){
 </div>`;
 }
 
-/* ── 공개 일정표 (달력) ── */
+/* ── 공개 일정표 (달력 + 일자별) ── */
 function renderSchedule(){
+  const toggle = `
+<div class="view-toggle">
+  <button data-smode="cal"${scheduleMode==="cal"?" on":""}>📅 달력 보기</button>
+  <button data-smode="list"${scheduleMode==="list"?" on":""}>📋 일자별 보기</button>
+</div>`;
+
+  const body = scheduleMode==="list" ? renderScheduleList() : renderScheduleCal();
+
+  return `
+<div class="card">
+  <div class="cal-title">2026년 7월 국내단기선교<br>릴레이 금식기도 일정표</div>
+  <div class="cal-sub">7/1(수) ~ 7/15(수) · 한 타임 ${DEFAULT_CAP}명 이내</div>
+  ${toggle}
+  ${body}
+  <div class="legend">✓ = 정원 마감 · 빈칸(-)은 아직 신청자가 없는 시간대입니다.</div>
+</div>`;
+}
+
+/* ── 달력 보기 ── */
+function renderScheduleCal(){
   const firstDow = new Date(YEAR, MONTH-1, START_DAY).getDay();
   const cells = [];
   for(let i=0;i<firstDow;i++) cells.push(null);
@@ -347,9 +396,6 @@ function renderSchedule(){
   }
 
   return `
-<div class="card">
-  <div class="cal-title">2026년 7월 국내단기선교<br>릴레이 금식기도 일정표</div>
-  <div class="cal-sub">7/1(수) ~ 7/15(수) · 한 타임 ${DEFAULT_CAP}명 이내</div>
   <div class="cal-scroll">
     <table class="cal">
       <thead><tr>
@@ -357,9 +403,32 @@ function renderSchedule(){
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
-  </div>
-  <div class="legend">✓ = 정원 마감 · 빈칸(-)은 아직 신청자가 없는 시간대입니다.<br>이 화면을 캡처해 단체방에 공유하시면 한눈에 보실 수 있어요.</div>
-</div>`;
+  </div>`;
+}
+
+/* ── 일자별 보기 ── */
+function renderScheduleList(){
+  return DAYS.map(d=>{
+    const dowCls = d.dowIdx===0?"sun":d.dowIdx===6?"sat":"";
+    const rows = TIMES.map(t=>{
+      const sk = slotKey(d.key, t.k);
+      const names = slotNames(sk), cap = slotCap(sk), full = names.length>=cap;
+      const namesHtml = names.length
+        ? `<div class="tnames">${names.join(", ")}</div>`
+        : `<div class="tnames empty">아직 신청자가 없습니다</div>`;
+      return `<div class="day-row">
+        <div class="ticon">${t.icon}</div>
+        <div class="tinfo">
+          <span class="tname${full?" full":""}">${t.label}${full?" ✓ 마감":""}</span><span class="tcount">${names.length}/${cap}</span>
+          ${namesHtml}
+        </div>
+      </div>`;
+    }).join("");
+    return `<div class="day-card">
+      <div class="day-card-head"><span class="dnum ${dowCls}">${d.md}</span><span class="dlabel">${d.dow}요일</span></div>
+      ${rows}
+    </div>`;
+  }).join("");
 }
 
 /* ───────── 관리자 ───────── */
@@ -481,6 +550,12 @@ function bindEvents(){
   if(view==="form" || view==="schedule"){
     document.querySelectorAll(".tab").forEach(b=>{
       b.onclick = ()=>{ view = b.dataset.tab; render(); };
+    });
+  }
+
+  if(view==="schedule"){
+    document.querySelectorAll(".view-toggle button").forEach(b=>{
+      b.onclick = ()=>{ scheduleMode = b.dataset.smode; render(); };
     });
   }
 
