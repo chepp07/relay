@@ -45,10 +45,18 @@ let slots = {};   // { "0701_m": { cap, count, entries:{fbKey:{name,createdAt}} 
 let view = "form";
 let saving = false;
 let submitted = null;
-let form = { name:"", day:"", time:"" };
+let form = { name:"", phone:"", day:"", time:"" };
 let errors = {};
 let copyDay = DAYS[0].key;
 let scheduleMode = "cal";   // "cal"=달력 / "list"=일자별
+
+/* ── 신청 변경/취소 상태 ── */
+let manageName = "";        // 조회한 이름
+let managePhone = "";       // 조회한 휴대폰 뒤 4자리
+let manageSearched = false; // 조회 버튼을 눌렀는지
+let manageEdit = null;      // 변경 중인 신청 { slotKey, fbKey, name, dayKey, timeK }
+let editPick = { day:"", time:"" };  // 변경할 새 날짜/시간
+let manageErr = "";
 
 function slotCap(sk){ const s=slots[sk]; return (s&&s.cap)?s.cap:DEFAULT_CAP; }
 function slotEntries(sk){ const s=slots[sk]; return (s&&s.entries)?s.entries:{}; }
@@ -62,6 +70,7 @@ function render(){
   if(!CONFIGURED){ app.innerHTML = "Firebase 설정이 필요합니다."; return; }
   if(view==="form")     app.innerHTML = renderHeader() + renderTabs("form") + renderForm();
   if(view==="schedule") app.innerHTML = renderHeader() + renderTabs("schedule") + renderSchedule();
+  if(view==="manage")   app.innerHTML = renderHeader() + renderManage();
   if(view==="success")  app.innerHTML = renderHeader() + renderSuccess();
   if(view==="admin")    app.innerHTML = renderAdmin();
   bindEvents();
@@ -77,12 +86,13 @@ function renderHeader(){
     </svg>
   </div>
   <div class="form-title">국내단기선교 릴레이 금식기도</div>
-  <div class="form-desc">선교를 앞두고 7/1(수)~7/15(수) 릴레이 금식기도로 함께 준비합니다.<br>
-  선교 일정: 7/16~19 (3박 4일)</div>
+  <div class="form-desc">선교를 앞두고 7/1(수)~7/15(수) 릴레이 금식기도로<br>
+  함께 준비합니다.<br>
+  선교 일정 : 7/16~19 (3박 4일)</div>
   <div class="notice-box">
-    <b>※</b> 매일 <b>아침·점심·저녁</b> 세 타임으로 진행합니다.<br>
-    <b>※</b> 한 타임당 <b>${DEFAULT_CAP}명 이내</b>로, 모든 성도님이 한 번씩 참여하실 수 있도록 부탁드립니다.<br>
-    <b>※</b> 신청 후에는 아래 <b>‘전체 일정표’</b>에서 함께 확인할 수 있습니다.
+    <div class="ni"><span class="mk">※</span><span>매일 <b>아침·점심·저녁</b> 시간대에 참여합니다.</span></div>
+    <div class="ni"><span class="mk">※</span><span><b>동일 시간대 ${DEFAULT_CAP}명 이내</b>로, 모든 성도님이 한 번씩 참여하실 수 있도록 부탁드립니다.</span></div>
+    <div class="ni"><span class="mk">※</span><span>신청 후에는 아래 <b>‘전체 일정표’</b>에서 확인할 수 있습니다.</span></div>
   </div>
 </div>`;
 }
@@ -133,6 +143,13 @@ function renderForm(){
     <input id="f-name" class="input${e.name?" err":""}" value="${form.name}" placeholder="성함을 입력해 주세요" maxlength="20"/>
     ${e.name?`<div class="err-msg">${e.name}</div>`:""}
   </div>
+  <div class="field">
+    <div class="label">휴대폰 번호 뒤 4자리 <span class="req">*</span></div>
+    <input id="f-phone" class="input${e.phone?" err":""}" value="${form.phone}" placeholder="예) 1234"
+      inputmode="numeric" maxlength="4"/>
+    <div style="font-size:12px;color:#98a2b3;margin-top:5px;">신청 변경·취소 시 본인 확인에 사용됩니다.</div>
+    ${e.phone?`<div class="err-msg">${e.phone}</div>`:""}
+  </div>
 </div>
 
 <div class="card">
@@ -153,19 +170,24 @@ ${e.submit?`<div class="err-banner">${e.submit}</div>`:""}
   🙏 ${saving?"저장 중...":"금식기도 신청하기"}
 </button>
 
-<div class="admin-link-wrap"><button class="admin-link" id="go-admin">관리자 페이지</button></div>`;
+<div class="admin-link-wrap" style="margin-top:1.1rem;">
+  <button class="admin-link" id="go-manage" style="color:#2d6cdf;">📝 이미 신청하셨나요? 신청 날짜 변경 / 취소</button>
+</div>
+
+<div class="admin-link-wrap" style="margin-top:.7rem;"><button class="admin-link" id="go-admin">관리자 페이지</button></div>`;
 }
 
 function renderSuccess(){
   const e = submitted;
+  const changed = !!(e && e.changed);
   return `
 <div class="success-wrap">
-  <div class="success-icon">🙏</div>
-  <div class="success-title">금식기도 신청이 완료되었습니다.</div>
-  <div class="success-desc">선교를 위한 거룩한 헌신에 함께해 주셔서 감사합니다.</div>
+  <div class="success-icon">${changed?"🔄":"🙏"}</div>
+  <div class="success-title">${changed?"신청 일정이 변경되었습니다.":"금식기도 신청이 완료되었습니다."}</div>
+  <div class="success-desc">${changed?"변경된 일정으로 함께 기도해 주세요.":"선교를 위한 거룩한 헌신에 함께해 주셔서 감사합니다."}</div>
   ${e?`<div class="receipt">
     <strong>이름</strong> : ${e.name}<br>
-    <strong>날짜</strong> : ${e.md} (${e.dow})<br>
+    <strong>${changed?"변경된 날짜":"날짜"}</strong> : ${e.md} (${e.dow})<br>
     <strong>시간대</strong> : ${e.timeLabel}
   </div>`:""}
   <button class="reset-btn" id="btn-reset">처음으로</button>
@@ -190,6 +212,10 @@ function renderSchedule(){
   ${toggle}
   ${body}
   <div class="legend">✓ = 정원 마감 · 빈칸(-)은 아직 신청자가 없는 시간대입니다.</div>
+  <div class="no-print" style="text-align:center;margin-top:14px;">
+    <button id="btn-print" style="padding:9px 18px;background:#475467;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🖨️ 일정표 인쇄 (A4 가로)</button>
+    <div style="font-size:11.5px;color:#98a2b3;margin-top:6px;">인쇄 미리보기에서 용지를 <b>A4 · 가로</b>로 선택해 주세요.</div>
+  </div>
 </div>`;
 }
 
@@ -257,6 +283,132 @@ function renderScheduleList(){
   }).join("");
 }
 
+/* ───────── 신청 변경 / 취소 ───────── */
+function findEntries(name, phone4){
+  const qn = name.trim(), qp = phone4.trim();
+  const out = [];
+  if(!qn || !qp) return out;
+  DAYS.forEach(d=>TIMES.forEach(t=>{
+    const sk = slotKey(d.key, t.k);
+    Object.entries(slotEntries(sk)).forEach(([fbKey,e])=>{
+      if(!e.name || e.name.trim()!==qn) return;
+      // 뒤 4자리 일치(과거에 번호 없이 신청된 데이터는 이름만으로 허용)
+      if(e.phone4 && e.phone4!==qp) return;
+      out.push({ slotKey:sk, fbKey, name:e.name, dayKey:d.key, timeK:t.k });
+    });
+  }));
+  return out;
+}
+
+function renderManage(){
+  if(manageEdit) return renderManageEdit();
+
+  const found = manageSearched ? findEntries(manageName, managePhone) : null;
+  let results = "";
+  if(found !== null){
+    if(!found.length){
+      results = `<div class="card"><div class="pick-hint" style="padding:18px;">'${manageName.trim()}' 님으로 일치하는 신청 내역이 없습니다.<br>이름과 휴대폰 번호 뒤 4자리를 신청 때와 동일하게 입력했는지 확인해 주세요.</div></div>`;
+    } else {
+      results = `<div style="font-size:13px;color:#667085;margin:2px 2px 10px;">총 <b>${found.length}건</b>의 신청이 있습니다. 변경하거나 취소할 신청을 선택해 주세요.</div>`
+        + found.map(en=>{
+          const d = DAYS.find(x=>x.key===en.dayKey);
+          const tl = TIMES.find(t=>t.k===en.timeK);
+          const dowCol = d.dowIdx===0?"#e0533d":d.dowIdx===6?"#3d72e0":"#1a1a1a";
+          return `<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:15px;font-weight:700;color:${dowCol};">${tl.icon} ${d.md}(${d.dow}) ${tl.label}</div>
+              <div style="font-size:12.5px;color:#98a2b3;margin-top:2px;">신청자 ${en.name}</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="me-edit" data-sk="${en.slotKey}" data-key="${en.fbKey}" data-name="${en.name}" data-day="${en.dayKey}" data-time="${en.timeK}"
+                style="padding:8px 12px;background:#2d6cdf;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">날짜 변경</button>
+              <button class="me-cancel" data-sk="${en.slotKey}" data-key="${en.fbKey}" data-name="${en.name}" data-day="${en.dayKey}" data-time="${en.timeK}"
+                style="padding:8px 12px;background:#fff;color:#d92d20;border:1px solid #f3b6b0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">신청 취소</button>
+            </div>
+          </div>`;
+        }).join("");
+    }
+  }
+
+  return `
+<div class="card">
+  <div class="field">
+    <div class="label">이름</div>
+    <input id="me-name" class="input" value="${manageName}" placeholder="신청 때 입력한 성함" maxlength="20"/>
+  </div>
+  <div class="field" style="margin-bottom:0;">
+    <div class="label">휴대폰 번호 뒤 4자리</div>
+    <div style="display:flex;gap:7px;">
+      <input id="me-phone" class="input" value="${managePhone}" placeholder="예) 1234" inputmode="numeric" maxlength="4" style="flex:1;"/>
+      <button id="me-search" class="reset-btn" style="white-space:nowrap;padding:11px 20px;">조회</button>
+    </div>
+    <div style="font-size:12px;color:#98a2b3;margin-top:7px;">신청할 때 입력한 이름과 휴대폰 뒤 4자리로 본인 확인합니다.</div>
+  </div>
+</div>
+${results}
+<div class="admin-link-wrap"><button class="admin-link" id="go-form3" style="color:#2d6cdf;">← 신청 폼으로 돌아가기</button></div>`;
+}
+
+function renderManageEdit(){
+  const cur = manageEdit;
+  const curD = DAYS.find(d=>d.key===cur.dayKey);
+  const curT = TIMES.find(t=>t.k===cur.timeK);
+
+  const dayBtns = DAYS.map(d=>{
+    const on = editPick.day===d.key;
+    const dowCls = d.dowIdx===0?"sun":d.dowIdx===6?"sat":"";
+    return `<button class="day-btn${on?" on":""}" data-day="${d.key}">
+      <div class="day-dom">${d.dom}</div>
+      <div class="day-dow ${dowCls}">${d.dow}</div>
+    </button>`;
+  }).join("");
+
+  let timeBlock;
+  if(!editPick.day){
+    timeBlock = `<div class="pick-hint">먼저 날짜를 선택해 주세요.</div>`;
+  } else {
+    timeBlock = `<div class="time-grid">` + TIMES.map(t=>{
+      const sk = slotKey(editPick.day, t.k);
+      const isCurrent = (sk===cur.slotKey);
+      const cnt = slotCount(sk), cap = slotCap(sk);
+      const full = (cnt>=cap) && !isCurrent;
+      const on = editPick.time===t.k;
+      return `<button class="time-btn${full?" full":""}${on?" on":""}" data-time="${t.k}" ${full?"disabled":""}>
+        <div class="time-icon">${t.icon}</div>
+        <div class="time-name">${t.label}</div>
+        ${full ? `<div class="time-closed">마감 ${cnt}/${cap}</div>`
+               : `<div class="time-remain">잔여 ${Math.max(0,cap-cnt)}명${isCurrent?" (현재)":""}</div>`}
+      </button>`;
+    }).join("") + `</div>`;
+  }
+
+  return `
+<div class="card">
+  <div style="font-size:14px;font-weight:700;margin-bottom:6px;">🔄 신청 변경</div>
+  <div style="font-size:13px;color:#667085;line-height:1.6;">
+    <b>${cur.name}</b> 님의 현재 신청<br>
+    현재 일정 : <b style="color:#2d6cdf;">${curD.md}(${curD.dow}) ${curT.label}</b>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-label">변경할 날짜</div>
+  <div class="day-grid">${dayBtns}</div>
+</div>
+
+<div class="card">
+  <div class="section-label">변경할 시간대</div>
+  ${timeBlock}
+  ${manageErr?`<div class="err-msg" style="margin-top:7px;">${manageErr}</div>`:""}
+</div>
+
+<button class="submit-btn" id="me-save" ${saving?"disabled":""}>
+  ✅ ${saving?"변경 중...":"이 일정으로 변경하기"}
+</button>
+
+<div class="admin-link-wrap"><button class="admin-link" id="me-back" style="color:#2d6cdf;">← 취소하고 목록으로</button></div>`;
+}
+
 /* ───────── 관리자 ───────── */
 function renderAdmin(){
   let totalEntries=0, totalCap=0, fullSlots=0;
@@ -266,32 +418,30 @@ function renderAdmin(){
   }));
   const remain = totalCap-totalEntries;
 
-  const dayRows = DAYS.map(d=>{
-    const cells = TIMES.map(t=>{
+  const dayCards = DAYS.map(d=>{
+    const slots = TIMES.map(t=>{
       const sk=slotKey(d.key,t.k);
       const names=slotNames(sk), cap=slotCap(sk), entries=slotEntries(sk);
       const chips = Object.entries(entries).map(([fbKey,e])=>
-        `<span style="display:inline-flex;align-items:center;gap:3px;background:#eef2f7;border-radius:6px;padding:2px 6px;margin:2px 3px 0 0;font-size:12px;">
-          ${e.name}<button class="del-btn" data-sk="${sk}" data-key="${fbKey}" style="background:none;border:none;cursor:pointer;color:#b0b8c4;font-size:13px;padding:0;line-height:1;">✕</button>
-        </span>`).join("") || `<span style="color:#c4cbd6;font-size:12px;">없음</span>`;
+        `<span class="adm-chip">${e.name}<button class="del-btn" data-sk="${sk}" data-key="${fbKey}">✕</button></span>`
+      ).join("") || `<span style="color:#c4cbd6;font-size:12px;">없음</span>`;
       const full = names.length>=cap;
-      return `<td style="border:1px solid #e8edf3;vertical-align:top;padding:6px 7px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px;">
-          <span style="font-size:12px;font-weight:700;color:${full?'#1d9d6f':'#5b6b85'};">${t.label} ${names.length}/${cap}</span>
-          <span style="display:inline-flex;align-items:center;gap:2px;">
+      return `<div class="adm-slot">
+        <div class="adm-slot-top">
+          <span class="adm-tname" style="color:${full?'#1d9d6f':'#5b6b85'};">${t.icon} ${t.label} ${names.length}/${cap}</span>
+          <span class="adm-cap-wrap">
             <span style="font-size:10px;color:#98a2b3;">마감</span>
-            <input type="number" class="cap-in" data-sk="${sk}" value="${cap}" min="1" max="${MAX_CAP}"
-              style="width:42px;padding:2px 4px;border:1px solid #d7dde5;border-radius:5px;font-size:12px;text-align:center;font-family:inherit;"/>
+            <input type="number" class="cap-in" data-sk="${sk}" value="${cap}" min="1" max="${MAX_CAP}"/>
           </span>
         </div>
-        <div>${chips}</div>
-      </td>`;
+        <div class="adm-chips">${chips}</div>
+      </div>`;
     }).join("");
-    const dowCls = d.dowIdx===0?"#e0533d":d.dowIdx===6?"#3d72e0":"#1a1a1a";
-    return `<tr>
-      <td style="border:1px solid #e8edf3;padding:6px 8px;white-space:nowrap;font-weight:700;color:${dowCls};background:#f7f9fc;font-size:13px;">${d.md}<br><span style="font-size:11px;font-weight:500;">(${d.dow})</span></td>
-      ${cells}
-    </tr>`;
+    const dowCol = d.dowIdx===0?"#e0533d":d.dowIdx===6?"#3d72e0":"#1a1a1a";
+    return `<div class="adm-day">
+      <div class="adm-day-head" style="color:${dowCol};">${d.md} <span style="font-size:12px;font-weight:500;">(${d.dow})</span></div>
+      <div class="adm-slots">${slots}</div>
+    </div>`;
   }).join("");
 
   const copyOptions = DAYS.map(d=>`<option value="${d.key}"${copyDay===d.key?" selected":""}>${d.md} (${d.dow})</option>`).join("");
@@ -339,19 +489,7 @@ function renderAdmin(){
     <div id="copy-preview" style="white-space:pre-wrap;background:#f7f9fc;border:1px solid #e7edf3;border-radius:8px;padding:10px 12px;margin-top:9px;font-size:13px;color:#475467;line-height:1.7;"></div>
   </div>
 
-  <div class="card" style="padding:0;overflow:hidden;">
-    <div style="overflow-x:auto;">
-      <table style="border-collapse:collapse;width:100%;min-width:640px;font-size:13px;">
-        <thead><tr style="background:#f7f9fc;">
-          <th style="border:1px solid #e8edf3;padding:7px;font-size:12px;color:#667085;">날짜</th>
-          <th style="border:1px solid #e8edf3;padding:7px;font-size:12px;color:#667085;">아침</th>
-          <th style="border:1px solid #e8edf3;padding:7px;font-size:12px;color:#667085;">점심</th>
-          <th style="border:1px solid #e8edf3;padding:7px;font-size:12px;color:#667085;">저녁</th>
-        </tr></thead>
-        <tbody>${dayRows}</tbody>
-      </table>
-    </div>
-  </div>
+  ${dayCards}
   <div style="font-size:12px;color:#98a2b3;margin-top:8px;">이름 옆 ✕ 를 누르면 해당 신청을 삭제합니다.</div>
 </div>`;
 }
@@ -383,10 +521,66 @@ function bindEvents(){
     document.querySelectorAll(".view-toggle button").forEach(b=>{
       b.onclick = ()=>{ scheduleMode = b.dataset.smode; render(); };
     });
+    const pb = $("btn-print");
+    if(pb) pb.onclick = ()=>{
+      // 인쇄는 항상 달력 형태로
+      if(scheduleMode!=="cal"){ scheduleMode="cal"; render(); setTimeout(()=>window.print(), 150); }
+      else window.print();
+    };
+  }
+
+  if(view==="manage"){
+    if(manageEdit){
+      document.querySelectorAll(".day-btn").forEach(b=>{
+        b.onclick = ()=>{ editPick.day=b.dataset.day; editPick.time=""; manageErr=""; render(); };
+      });
+      document.querySelectorAll(".time-btn:not(.full)").forEach(b=>{
+        b.onclick = ()=>{ editPick.time=b.dataset.time; manageErr=""; render(); };
+      });
+      $("me-save").onclick = handleMove;
+      $("me-back").onclick = ()=>{ manageEdit=null; manageErr=""; render(); };
+    } else {
+      const nameInput = $("me-name"), phoneInput = $("me-phone");
+      nameInput.oninput = e=>{ manageName=e.target.value; };
+      phoneInput.oninput = e=>{
+        const v=e.target.value.replace(/\D/g,"").slice(0,4);
+        managePhone=v; e.target.value=v;
+      };
+      const doSearch = ()=>{ manageSearched=true; render(); };
+      $("me-search").onclick = doSearch;
+      nameInput.onkeydown = e=>{ if(e.key==="Enter") doSearch(); };
+      phoneInput.onkeydown = e=>{ if(e.key==="Enter") doSearch(); };
+
+      document.querySelectorAll(".me-edit").forEach(b=>{
+        b.onclick = ()=>{
+          manageEdit = { slotKey:b.dataset.sk, fbKey:b.dataset.key, name:b.dataset.name,
+                         dayKey:b.dataset.day, timeK:b.dataset.time };
+          editPick = { day:b.dataset.day, time:b.dataset.time };
+          manageErr=""; render();
+        };
+      });
+      document.querySelectorAll(".me-cancel").forEach(b=>{
+        b.onclick = async ()=>{
+          const d=DAYS.find(x=>x.key===b.dataset.day), tl=TIMES.find(t=>t.k===b.dataset.time);
+          if(!confirm(`${b.dataset.name} 님의 ${d.md}(${d.dow}) ${tl.label} 신청을 취소(삭제)할까요?`)) return;
+          await runTransaction(ref(db, ROOT+"/slots/"+b.dataset.sk), (s)=>{
+            if(!s) return s;
+            const ents = { ...(s.entries||{}) };
+            delete ents[b.dataset.key];
+            return { ...s, entries: ents, count: Object.keys(ents).length };
+          });
+        };
+      });
+      $("go-form3").onclick = ()=>{ view="form"; render(); };
+    }
   }
 
   if(view==="form"){
     $("f-name").oninput = e=>{ form.name=e.target.value; delete errors.name; };
+    $("f-phone").oninput = e=>{
+      const v=e.target.value.replace(/\D/g,"").slice(0,4);
+      form.phone=v; e.target.value=v; delete errors.phone;
+    };
     document.querySelectorAll(".day-btn").forEach(b=>{
       b.onclick = ()=>{ form.day=b.dataset.day; form.time=""; delete errors.day; render(); };
     });
@@ -395,10 +589,11 @@ function bindEvents(){
     });
     $("btn-submit").onclick = handleSubmit;
     $("go-admin").onclick = showLoginModal;
+    $("go-manage").onclick = ()=>{ manageSearched=false; manageEdit=null; manageErr=""; managePhone=""; view="manage"; render(); };
   }
 
   if(view==="success"){
-    $("btn-reset").onclick = ()=>{ form={name:"",day:"",time:""}; errors={}; submitted=null; view="form"; render(); };
+    $("btn-reset").onclick = ()=>{ form={name:"",phone:"",day:"",time:""}; errors={}; submitted=null; view="form"; render(); };
     const gs = $("go-schedule2"); if(gs) gs.onclick = ()=>{ view="schedule"; render(); };
   }
 
@@ -458,22 +653,41 @@ async function setCap(sk, cap){
 }
 
 /* ── 엑셀(CSV) 다운로드 ── */
-function downloadExcel(){
+async function downloadExcel(){
   const BOM="﻿";
-  const headers=["날짜","요일","시간대","이름","신청일시"];
+  const headers=["날짜","요일","시간대","이름","휴대폰뒤4자리","신청일시"];
   const rows=[];
   DAYS.forEach(d=>TIMES.forEach(t=>{
     const sk=slotKey(d.key,t.k);
     Object.values(slotEntries(sk)).forEach(e=>{
-      rows.push([d.md, d.dow, t.label, e.name, e.createdAt||""]);
+      rows.push([d.md, d.dow, t.label, e.name, e.phone4||"", e.createdAt||""]);
     });
   }));
   if(!rows.length){ alert("다운로드할 데이터가 없습니다."); return; }
   const csv=BOM+[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const filename="릴레이금식기도_명단.csv";
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+
+  // 1) 모바일: 네이티브 공유/저장 시트 우선 시도 (파일로 저장·공유 가능)
+  try{
+    const file=new File([blob], filename, {type:"text/csv"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({ files:[file], title:"릴레이 금식기도 명단" });
+      return;
+    }
+  }catch(e){
+    if(e && e.name==="AbortError") return;  // 사용자가 공유를 취소한 경우
+    // 그 외 오류는 아래 일반 다운로드로 폴백
+  }
+
+  // 2) 일반 다운로드 (PC / 모바일 브라우저)
   const url=URL.createObjectURL(blob);
-  const a=document.createElement("a"); a.href=url; a.download="릴레이금식기도_명단.csv"; a.click();
-  URL.revokeObjectURL(url);
+  const a=document.createElement("a");
+  a.href=url; a.download=filename; a.style.display="none";
+  document.body.appendChild(a);
+  a.click();
+  // 모바일에서 다운로드가 시작되기 전에 해제되지 않도록 지연 후 정리
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 4000);
 }
 
 /* ── 로그인 모달 ── */
@@ -513,6 +727,7 @@ function showLoginModal(){
 async function handleSubmit(){
   const errs={};
   if(!form.name.trim()) errs.name="이름을 입력해 주세요.";
+  if(!/^\d{4}$/.test(form.phone.trim())) errs.phone="휴대폰 번호 뒤 4자리(숫자)를 입력해 주세요.";
   if(!form.day) errs.day="금식 날짜를 선택해 주세요.";
   if(!form.time) errs.time="금식 시간대를 선택해 주세요.";
   if(Object.keys(errs).length){ errors=errs; render(); return; }
@@ -521,7 +736,8 @@ async function handleSubmit(){
   try{
     const sk=slotKey(form.day, form.time);
     const name=form.name.trim();
-    const newEntry={ name, createdAt:new Date().toLocaleString("ko-KR") };
+    const phone4=form.phone.trim();
+    const newEntry={ name, phone4, createdAt:new Date().toLocaleString("ko-KR") };
 
     let txError=null;
     const txResult=await runTransaction(ref(db, ROOT+"/slots/"+sk), (s)=>{
@@ -546,6 +762,55 @@ async function handleSubmit(){
     view="success";
   }catch(err){
     errors={submit:"저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."};
+  }
+  saving=false; render();
+}
+
+/* ── 신청 일정 변경(이동) ── */
+async function handleMove(){
+  if(!editPick.day || !editPick.time){ manageErr="변경할 날짜와 시간대를 모두 선택해 주세요."; render(); return; }
+  const cur = manageEdit;
+  const newSk = slotKey(editPick.day, editPick.time);
+  if(newSk===cur.slotKey){ manageErr="현재와 동일한 일정입니다. 다른 날짜·시간대를 선택해 주세요."; render(); return; }
+
+  saving=true; render();
+  try{
+    const entryData = slotEntries(cur.slotKey)[cur.fbKey]
+      || { name:cur.name, createdAt:new Date().toLocaleString("ko-KR") };
+
+    // 1) 새 타임에 추가 (정원 확인)
+    let addErr=null;
+    const addRes = await runTransaction(ref(db, ROOT+"/slots/"+newSk), (s)=>{
+      const data = s || { cap:DEFAULT_CAP, count:0, entries:{} };
+      const cap = data.cap || DEFAULT_CAP;
+      const ents = data.entries || {};
+      if(Object.keys(ents).length >= cap){ addErr="full"; return; }
+      const newKey="e"+Date.now()+Math.random().toString(36).slice(2,7);
+      const next={ ...ents, [newKey]:entryData };
+      return { cap, count:Object.keys(next).length, entries:next };
+    });
+
+    if(!addRes.committed){
+      manageErr = addErr==="full"
+        ? "선택하신 시간대가 방금 마감되었습니다. 다른 시간대를 선택해 주세요."
+        : "변경 중 오류가 발생했습니다. 다시 시도해 주세요.";
+      saving=false; render(); return;
+    }
+
+    // 2) 기존 타임에서 제거
+    await runTransaction(ref(db, ROOT+"/slots/"+cur.slotKey), (s)=>{
+      if(!s) return s;
+      const ents = { ...(s.entries||{}) };
+      delete ents[cur.fbKey];
+      return { ...s, entries: ents, count: Object.keys(ents).length };
+    });
+
+    const nd = DAYS.find(x=>x.key===editPick.day);
+    submitted = { name:entryData.name, md:nd.md, dow:nd.dow,
+                  timeLabel:TIMES.find(t=>t.k===editPick.time).label, changed:true };
+    manageEdit=null; manageErr=""; view="success";
+  }catch(err){
+    manageErr="변경 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
   }
   saving=false; render();
 }
