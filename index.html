@@ -115,21 +115,27 @@
   /* ── 공개 일정표 (달력) ── */
   .cal-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
   .cal-sub { text-align: center; font-size: 12.5px; color: #98a2b3; margin-bottom: 14px; }
-  .cal-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e2e8f0; }
-  table.cal { border-collapse: collapse; width: 100%; min-width: 620px; background: #fff; }
-  table.cal th { background: #5b6b85; color: #fff; font-size: 13px; font-weight: 700; padding: 8px 0; text-align: center; }
+  .cal-scroll { border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+  table.cal { border-collapse: collapse; width: 100%; table-layout: fixed; background: #fff; }
+  table.cal th { background: #5b6b85; color: #fff; font-size: 12px; font-weight: 700; padding: 7px 0; text-align: center; }
   table.cal th.sun { color: #ffd0c8; }
   table.cal th.sat { color: #cfe0ff; }
-  table.cal td { border: 1px solid #e8edf3; vertical-align: top; width: 14.28%; height: 96px; padding: 0; }
+  table.cal td { border: 1px solid #e8edf3; vertical-align: top; width: 14.28%; height: 88px; padding: 0; }
   td.empty { background: #fafbfc; }
-  .cal-daynum { font-size: 13px; font-weight: 700; padding: 4px 6px 2px; }
+  .cal-daynum { font-size: 12px; font-weight: 700; padding: 3px 4px 1px; }
   .cal-daynum.sun { color: #e0533d; }
   .cal-daynum.sat { color: #3d72e0; }
-  .cal-slot { font-size: 10.5px; line-height: 1.4; padding: 1px 5px 3px; border-top: 1px dashed #eef1f5; }
+  .cal-slot { font-size: 9.5px; line-height: 1.35; padding: 1px 3px 2px; border-top: 1px dashed #eef1f5; }
   .cal-slot .tlab { font-weight: 700; color: #5b6b85; }
   .cal-slot .tlab.full { color: #1d9d6f; }
   .cal-names { color: #475467; word-break: break-all; }
   .cal-empty-names { color: #c4cbd6; }
+
+  @media (max-width: 420px) {
+    table.cal th { font-size: 11px; }
+    .cal-daynum { font-size: 11px; }
+    .cal-slot { font-size: 9px; padding: 1px 2px 2px; }
+  }
   .legend { font-size: 11.5px; color: #98a2b3; margin-top: 10px; text-align: center; line-height: 1.7; }
 
   /* ── 일정표 보기 전환 토글 ── */
