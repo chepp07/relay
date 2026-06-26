@@ -287,83 +287,72 @@ function renderScheduleList(){
   }).join("");
 }
 
-/* ── 인쇄 미리보기 (새 탭) ── */
-function openPrintPreview(){
-  const title = "2026년 7월 국내단기선교 릴레이 금식기도 일정표";
-  const calHtml = renderScheduleCal();   // 현재 신청 현황이 반영된 달력
-  const css = `
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Sans KR',sans-serif;background:#eef1f5;color:#1a1a1a;}
-.toolbar{position:sticky;top:0;z-index:10;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;padding:10px 14px;border-bottom:1px solid #e2e8f0;}
-.toolbar button{padding:9px 16px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
-.btn-print{background:#2d6cdf;color:#fff;}
-.btn-close{background:#eef2f7;color:#475467;}
-.hint{max-width:1000px;margin:12px auto 0;padding:9px 14px;background:#fff7e6;border:1px solid #ffe1a8;border-radius:8px;font-size:12.5px;color:#8a6d3b;line-height:1.6;}
-.sheet{background:#fff;margin:16px auto;max-width:1000px;padding:16px;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.08);}
-h1{font-size:18px;font-weight:700;text-align:center;line-height:1.3;margin-bottom:5px;}
-.sub{text-align:center;font-size:12.5px;color:#98a2b3;margin-bottom:12px;}
-.cal-scroll{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;}
-table.cal{border-collapse:collapse;width:100%;table-layout:fixed;background:#fff;}
-table.cal th{background:#5b6b85;color:#fff;font-size:12px;font-weight:700;padding:6px 0;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-table.cal th.sun{color:#ffd0c8;}
-table.cal th.sat{color:#cfe0ff;}
-table.cal td{border:1px solid #e8edf3;vertical-align:top;height:80px;padding:0;}
-td.empty{background:#fafbfc;}
-.cal-daynum{font-size:12px;font-weight:700;padding:3px 4px 1px;}
-.cal-daynum.sun{color:#e0533d;}
-.cal-daynum.sat{color:#3d72e0;}
-.cal-slot{font-size:11px;line-height:1.35;padding:1px 4px 3px;border-top:1px dashed #eef1f5;}
-.cal-slot .tlab{display:block;font-weight:700;color:#5b6b85;}
-.cal-slot .tlab.full{color:#1d9d6f;}
-.cal-names{color:#475467;margin-top:1px;}
-.cal-name{display:inline-block;white-space:nowrap;}
-.cal-empty-names{color:#c4cbd6;}
-@media print{
-  @page{size:A4 landscape;margin:5mm;}
-  body{background:#fff;}
-  .no-print{display:none!important;}
-  .sheet{margin:0;max-width:none;padding:0;border-radius:0;box-shadow:none;}
-  h1{font-size:15pt;margin-bottom:5px;}
-  .sub{display:none;}
-  .cal-scroll{border:none;border-radius:0;}
-  table.cal th{font-size:11pt;padding:3px 0;}
-  table.cal td{height:auto;border:1px solid #999;}
-  .cal-daynum{font-size:12pt;padding:2px 5px 1px;}
-  .cal-slot{font-size:12pt;padding:2px 5px 4px;line-height:1.3;}
-  .cal-slot .tlab{font-size:8.5pt;}
-  .cal-names{color:#000;}
-  .cal-name{font-size:13pt;font-weight:500;}
-  .cal-empty-names{color:#bbb;}
-}`;
-  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>${title}</title><style>${css}</style></head>
-<body>
-<div class="toolbar no-print">
-  <button class="btn-print" onclick="try{window.print();}catch(e){}">🖨️ 인쇄 / PDF 저장</button>
-  <button class="btn-close" onclick="window.close()">닫기</button>
-</div>
-<div class="hint no-print">
-  인쇄 버튼이 동작하지 않으면, 브라우저 메뉴(⋮ 또는 공유)에서 <b>인쇄</b>를 선택하세요.<br>
-  용지는 <b>A4 · 가로</b>를 권장합니다. PDF로 저장도 가능합니다.
-</div>
-<div class="sheet">
-  <h1>${title}</h1>
-  <div class="sub">7/1(수) ~ 7/15(수) · 한 타임 ${DEFAULT_CAP}명 이내</div>
-  ${calHtml}
-</div>
-</body></html>`;
+/* ── 앱 내 브라우저(카카오톡/네이버 등) 감지 ── */
+function isInAppBrowser(){
+  const ua = navigator.userAgent || "";
+  if(/KAKAOTALK|NAVER|Instagram|FB_IAB|FBAN|FBAV|Line\/|Daum|everytime|wadiz/i.test(ua)) return true;
+  // 안드로이드 인앱 웹뷰(; wv) 표식
+  if(/Android/i.test(ua) && /; wv\)/i.test(ua)) return true;
+  return false;
+}
 
-  // 실제 주소(blob URL)를 가진 페이지로 열어야 모바일 브라우저의 인쇄가 동작함
-  const blob = new Blob([html], { type:"text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const w = window.open(url, "_blank");
-  if(!w){
-    URL.revokeObjectURL(url);
-    alert("미리보기 창을 열 수 없습니다.\n\n카카오톡 등 앱 안의 브라우저에서는 인쇄가 제한됩니다.\n화면 오른쪽 위 메뉴에서 'Chrome' 또는 'Safari로 열기'를 선택한 뒤 다시 시도해 주세요.");
-    return;
+/* ── 앱 내 브라우저 안내(외부 브라우저로 열기 + 주소 복사) ── */
+function guideExternalBrowser(what){
+  const url = location.href;
+  let m = document.getElementById("ext-guide");
+  if(!m){
+    m = document.createElement("div");
+    m.id = "ext-guide";
+    m.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;";
+    document.body.appendChild(m);
   }
-  setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  m.innerHTML = `<div style="background:#fff;border-radius:14px;padding:1.5rem 1.4rem;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="font-size:30px;margin-bottom:8px;">📱</div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px;line-height:1.4;">앱 안의 브라우저에서는<br>${what||"저장"}이 제한됩니다</div>
+    <div style="font-size:13px;color:#667085;line-height:1.7;margin-bottom:13px;">
+      카카오톡·네이버 등 <b>앱 안에서 열린 화면</b>에서는 파일 저장·인쇄가 막혀 있습니다.<br>
+      아래 주소를 복사해 <b>크롬(Chrome)</b>이나 <b>사파리(Safari)</b>에서 열어 주세요.
+    </div>
+    <div style="font-size:12px;background:#f5f7fa;border:1px solid #e7edf3;border-radius:8px;padding:8px;word-break:break-all;color:#475467;margin-bottom:12px;">${url}</div>
+    <button id="eg-copy" style="width:100%;padding:11px;background:#2d6cdf;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;">🔗 주소 복사하기</button>
+    <button id="eg-close" style="width:100%;padding:9px;background:#f5f5f5;border:none;border-radius:9px;font-size:13px;cursor:pointer;color:#888;font-family:inherit;">닫기</button>
+  </div>`;
+  m.style.display = "flex";
+  m.querySelector("#eg-copy").onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(url); alert("주소가 복사되었습니다.\n크롬 / 사파리 주소창에 붙여넣어 열어 주세요."); }
+    catch(_){ const ta=document.createElement("textarea"); ta.value=url; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); alert("주소가 복사되었습니다."); }
+  };
+  m.querySelector("#eg-close").onclick = ()=>{ m.style.display="none"; };
+  m.onclick = e=>{ if(e.target===m) m.style.display="none"; };
+}
+
+/* ── 인쇄 미리보기 (현재 화면 오버레이) ── */
+function openPrintPreview(){
+  let ov = document.getElementById("print-overlay");
+  if(!ov){
+    ov = document.createElement("div");
+    ov.id = "print-overlay";
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `
+    <div class="po-bar no-print">
+      <button class="po-print">🖨️ 인쇄 / PDF 저장</button>
+      <button class="po-close">닫기</button>
+      <span>용지 <b>A4 · 가로</b> 권장. 버튼이 안 되면 브라우저 메뉴(공유 → 인쇄)를 이용하세요.</span>
+    </div>
+    <div class="po-sheet">
+      <h1>2026년 7월 국내단기선교<br>릴레이 금식기도 일정표</h1>
+      <div class="po-sub">7/1(수) ~ 7/15(수) · 한 타임 ${DEFAULT_CAP}명 이내</div>
+      ${renderScheduleCal()}
+    </div>`;
+  document.body.classList.add("po-open");
+  ov.style.display = "block";
+  ov.scrollTop = 0;
+  ov.querySelector(".po-close").onclick = ()=>{ ov.style.display="none"; document.body.classList.remove("po-open"); };
+  ov.querySelector(".po-print").onclick = ()=>{
+    if(isInAppBrowser()){ guideExternalBrowser("인쇄"); return; }
+    window.print();
+  };
 }
 
 /* ───────── 신청 변경 / 취소 ───────── */
@@ -773,6 +762,7 @@ function hideBusy(){ const o=document.getElementById("busy-overlay"); if(o) o.st
 
 /* ── 엑셀(CSV) 다운로드 ── */
 async function downloadExcel(){
+  if(isInAppBrowser()){ guideExternalBrowser("엑셀 저장"); return; }
   const BOM="﻿";
   const headers=["날짜","요일","시간대","이름","휴대폰뒤4자리","신청일시"];
   const rows=[];
@@ -790,6 +780,7 @@ async function downloadExcel(){
 
 /* ── 일정표 PDF 저장 (A4 가로 1장) ── */
 async function downloadSchedulePdf(){
+  if(isInAppBrowser()){ guideExternalBrowser("PDF 저장"); return; }
   showBusy("📄 PDF를 만드는 중입니다...");
   let stage=null;
   try{

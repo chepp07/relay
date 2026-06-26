@@ -182,37 +182,46 @@ td.empty { background: #fafbfc; }
 .adm-chip .del-btn { background: none; border: none; cursor: pointer; color: #b0b8c4; font-size: 13px; padding: 0; line-height: 1; }
 .adm-chip .del-btn:hover { color: #d92d20; }
 
-/* ════════ 인쇄 (A4 가로 1장) ════════ */
+/* ════════ 인쇄 미리보기 오버레이 ════════ */
+#print-overlay { display: none; position: fixed; inset: 0; z-index: 9998; background: #fff; overflow: auto; -webkit-overflow-scrolling: touch; }
+#print-overlay .po-bar { position: sticky; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: #475467; padding: 10px 14px; }
+#print-overlay .po-bar button { padding: 9px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+#print-overlay .po-bar .po-print { background: #2d6cdf; color: #fff; }
+#print-overlay .po-bar .po-close { background: #fff; color: #475467; }
+#print-overlay .po-bar span { font-size: 12px; color: #dbe2ec; line-height: 1.5; }
+#print-overlay .po-sheet { max-width: 1000px; margin: 0 auto; padding: 16px; }
+#print-overlay h1 { font-size: 18px; font-weight: 700; text-align: center; line-height: 1.3; margin-bottom: 5px; }
+#print-overlay .po-sub { text-align: center; font-size: 12.5px; color: #98a2b3; margin-bottom: 12px; }
+
+/* ════════ 인쇄 (A4 가로 1장) — 오버레이만 출력 ════════ */
 @media print {
   @page { size: A4 landscape; margin: 5mm; }
   html, body { background: #fff !important; }
 
-  /* 화면 전용 요소 숨김 */
-  .no-print, .header, .tabs, .view-toggle, .cal-sub, .legend, .admin-link-wrap { display: none !important; }
+  /* 오버레이가 열려 있으면 본문은 숨기고 오버레이만 인쇄 */
+  body.po-open .page { display: none !important; }
+  body.po-open #print-overlay { display: block !important; position: static !important; overflow: visible !important; }
+  #print-overlay .po-bar, #print-overlay .po-sub, .no-print { display: none !important; }
+  #print-overlay .po-sheet { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  #print-overlay h1 { font-size: 15pt !important; margin-bottom: 5px !important; }
+  #print-overlay h1 br { display: none; }
 
-  /* 여백 제거 — 달력이 용지를 꽉 채우도록 */
-  .page { max-width: none !important; margin: 0 !important; padding: 0 !important; }
-  .card { border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; background: #fff !important; }
-
-  .cal-title { font-size: 15pt !important; margin-bottom: 5px !important; line-height: 1.2 !important; }
-  .cal-title br { display: none; }   /* 제목 한 줄로 */
-
-  .cal-scroll { border: none !important; border-radius: 0 !important; overflow: visible !important; }
-  table.cal { width: 100% !important; }
-  table.cal th {
+  #print-overlay .cal-scroll { border: none !important; border-radius: 0 !important; overflow: visible !important; }
+  #print-overlay table.cal { width: 100% !important; }
+  #print-overlay table.cal th {
     font-size: 11pt !important; padding: 3px 0 !important;
     background: #5b6b85 !important; color: #fff !important;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
-  table.cal th.sun { color: #ffd0c8 !important; }
-  table.cal th.sat { color: #cfe0ff !important; }
-  table.cal td { height: auto !important; border: 1px solid #999 !important; }
-  td.empty { background: #fff !important; }
+  #print-overlay table.cal th.sun { color: #ffd0c8 !important; }
+  #print-overlay table.cal th.sat { color: #cfe0ff !important; }
+  #print-overlay table.cal td { height: auto !important; border: 1px solid #999 !important; }
+  #print-overlay td.empty { background: #fff !important; }
 
-  .cal-daynum { font-size: 12pt !important; padding: 2px 5px 1px !important; }
-  .cal-slot { font-size: 12pt !important; padding: 2px 5px 4px !important; line-height: 1.3 !important; }
-  .cal-slot .tlab { font-size: 8.5pt !important; }
-  .cal-names { color: #000 !important; }
-  .cal-name { font-size: 13pt !important; font-weight: 500; }   /* 이름 최대한 크게 */
-  .cal-empty-names { color: #bbb !important; }
+  #print-overlay .cal-daynum { font-size: 12pt !important; padding: 2px 5px 1px !important; }
+  #print-overlay .cal-slot { font-size: 12pt !important; padding: 2px 5px 4px !important; line-height: 1.3 !important; }
+  #print-overlay .cal-slot .tlab { font-size: 8.5pt !important; }
+  #print-overlay .cal-names { color: #000 !important; }
+  #print-overlay .cal-name { font-size: 13pt !important; font-weight: 500; }
+  #print-overlay .cal-empty-names { color: #bbb !important; }
 }
