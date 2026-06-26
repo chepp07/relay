@@ -213,8 +213,8 @@ function renderSchedule(){
   ${body}
   <div class="legend">✓ = 정원 마감 · 빈칸(-)은 아직 신청자가 없는 시간대입니다.</div>
   <div class="no-print" style="text-align:center;margin-top:14px;">
-    <button id="btn-print" style="padding:9px 18px;background:#475467;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🖨️ 일정표 인쇄 (A4 가로)</button>
-    <div style="font-size:11.5px;color:#98a2b3;margin-top:6px;">인쇄 미리보기에서 용지를 <b>A4 · 가로</b>로 선택해 주세요.</div>
+    <button id="btn-print" style="padding:9px 18px;background:#475467;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🖨️ 일정표 인쇄 미리보기</button>
+    <div style="font-size:11.5px;color:#98a2b3;margin-top:6px;">미리보기 화면에서 인쇄하거나 PDF로 저장할 수 있어요. (용지 <b>A4 · 가로</b> 권장)</div>
   </div>
 </div>`;
 }
@@ -281,6 +281,80 @@ function renderScheduleList(){
       ${rows}
     </div>`;
   }).join("");
+}
+
+/* ── 인쇄 미리보기 (새 탭) ── */
+function openPrintPreview(){
+  const title = "2026년 7월 국내단기선교 릴레이 금식기도 일정표";
+  const calHtml = renderScheduleCal();   // 현재 신청 현황이 반영된 달력
+  const css = `
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:#eef1f5;color:#1a1a1a;}
+.toolbar{position:sticky;top:0;z-index:10;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;padding:10px 14px;border-bottom:1px solid #e2e8f0;}
+.toolbar button{padding:9px 16px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-print{background:#2d6cdf;color:#fff;}
+.btn-close{background:#eef2f7;color:#475467;}
+.toolbar span{font-size:12.5px;color:#98a2b3;}
+.sheet{background:#fff;margin:16px auto;max-width:1000px;padding:16px;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+h1{font-size:18px;font-weight:700;text-align:center;line-height:1.3;margin-bottom:5px;}
+.sub{text-align:center;font-size:12.5px;color:#98a2b3;margin-bottom:12px;}
+.cal-scroll{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;}
+table.cal{border-collapse:collapse;width:100%;table-layout:fixed;background:#fff;}
+table.cal th{background:#5b6b85;color:#fff;font-size:12px;font-weight:700;padding:6px 0;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+table.cal th.sun{color:#ffd0c8;}
+table.cal th.sat{color:#cfe0ff;}
+table.cal td{border:1px solid #e8edf3;vertical-align:top;height:80px;padding:0;}
+td.empty{background:#fafbfc;}
+.cal-daynum{font-size:12px;font-weight:700;padding:3px 4px 1px;}
+.cal-daynum.sun{color:#e0533d;}
+.cal-daynum.sat{color:#3d72e0;}
+.cal-slot{font-size:11px;line-height:1.35;padding:1px 4px 3px;border-top:1px dashed #eef1f5;}
+.cal-slot .tlab{display:block;font-weight:700;color:#5b6b85;}
+.cal-slot .tlab.full{color:#1d9d6f;}
+.cal-names{color:#475467;margin-top:1px;}
+.cal-name{display:inline-block;white-space:nowrap;}
+.cal-empty-names{color:#c4cbd6;}
+@media print{
+  @page{size:A4 landscape;margin:5mm;}
+  body{background:#fff;}
+  .no-print{display:none!important;}
+  .sheet{margin:0;max-width:none;padding:0;border-radius:0;box-shadow:none;}
+  h1{font-size:15pt;margin-bottom:5px;}
+  .sub{display:none;}
+  .cal-scroll{border:none;border-radius:0;}
+  table.cal th{font-size:11pt;padding:3px 0;}
+  table.cal td{height:auto;border:1px solid #999;}
+  .cal-daynum{font-size:12pt;padding:2px 5px 1px;}
+  .cal-slot{font-size:12pt;padding:2px 5px 4px;line-height:1.3;}
+  .cal-slot .tlab{font-size:8.5pt;}
+  .cal-names{color:#000;}
+  .cal-name{font-size:13pt;font-weight:500;}
+  .cal-empty-names{color:#bbb;}
+}`;
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>${title}</title><style>${css}</style></head>
+<body>
+<div class="toolbar no-print">
+  <button class="btn-print" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+  <button class="btn-close" onclick="window.close()">닫기</button>
+  <span>아래 미리보기를 확인한 뒤 인쇄하세요. (용지: A4 · 가로)</span>
+</div>
+<div class="sheet">
+  <h1>${title}</h1>
+  <div class="sub">7/1(수) ~ 7/15(수) · 한 타임 ${DEFAULT_CAP}명 이내</div>
+  ${calHtml}
+</div>
+</body></html>`;
+
+  const w = window.open("", "_blank");
+  if(!w){
+    alert("미리보기 창을 열 수 없습니다.\n\n카카오톡 등 앱 안의 브라우저에서는 인쇄가 제한됩니다.\n화면 오른쪽 위 메뉴에서 'Chrome' 또는 'Safari로 열기'를 선택한 뒤 다시 시도해 주세요.");
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
 }
 
 /* ───────── 신청 변경 / 취소 ───────── */
@@ -522,11 +596,7 @@ function bindEvents(){
       b.onclick = ()=>{ scheduleMode = b.dataset.smode; render(); };
     });
     const pb = $("btn-print");
-    if(pb) pb.onclick = ()=>{
-      // 인쇄는 항상 달력 형태로
-      if(scheduleMode!=="cal"){ scheduleMode="cal"; render(); setTimeout(()=>window.print(), 150); }
-      else window.print();
-    };
+    if(pb) pb.onclick = openPrintPreview;
   }
 
   if(view==="manage"){
