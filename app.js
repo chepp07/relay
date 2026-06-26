@@ -80,9 +80,36 @@ function renderHeader(){
   return `
 <div class="header">
   <div class="cross-wrap">
-    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-      <rect x="11" y="3" width="6" height="22" rx="2" fill="#2d6cdf"/>
-      <rect x="3" y="11" width="22" height="6" rx="2" fill="#2d6cdf"/>
+    <svg width="58" height="58" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="dreamBg" cx="50%" cy="36%" r="68%">
+          <stop offset="0%" stop-color="#6aa6ff"/>
+          <stop offset="55%" stop-color="#2d6cdf"/>
+          <stop offset="100%" stop-color="#1a4ea3"/>
+        </radialGradient>
+        <linearGradient id="dreamCross" x1="32" y1="13" x2="32" y2="51" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="100%" stop-color="#d4e4ff"/>
+        </linearGradient>
+        <filter id="dreamGlow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.6"/>
+        </filter>
+      </defs>
+      <circle cx="32" cy="32" r="31" fill="url(#dreamBg)"/>
+      <circle cx="32" cy="32" r="30" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="1.4"/>
+      <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.2" stroke-linecap="round">
+        <line x1="32" y1="7"  x2="32" y2="13"/>
+        <line x1="32" y1="51" x2="32" y2="57"/>
+        <line x1="7"  y1="32" x2="13" y2="32"/>
+        <line x1="51" y1="32" x2="57" y2="32"/>
+      </g>
+      <g filter="url(#dreamGlow)" opacity="0.45">
+        <rect x="28.5" y="15" width="8" height="36" rx="3" fill="#0c2f6b"/>
+        <rect x="15" y="28.5" width="36" height="8" rx="3" fill="#0c2f6b"/>
+      </g>
+      <rect x="28" y="14" width="8" height="36" rx="3" fill="url(#dreamCross)"/>
+      <rect x="14" y="28" width="36" height="8" rx="3" fill="url(#dreamCross)"/>
+      <rect x="29.4" y="15.5" width="2.2" height="14" rx="1.1" fill="#ffffff" opacity="0.55"/>
     </svg>
   </div>
   <div class="form-title">국내단기선교 릴레이 금식기도</div>
