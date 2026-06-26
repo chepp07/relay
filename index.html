@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>평촌드림교회 국내단기선교 릴레이 금식기도 신청</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: #f5f7fa;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+  .page { max-width: 640px; margin: 0 auto; padding: 1.75rem 1rem 4rem; }
+
+  /* ── 헤더 ── */
+  .header { text-align: center; margin-bottom: 1.25rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; }
+  .cross-wrap {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #eaf1fb; margin: 0 auto 1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .form-title { font-size: 20px; font-weight: 700; line-height: 1.45; margin-bottom: 9px; }
+  .form-desc { font-size: 13.5px; color: #667085; line-height: 1.75; margin-bottom: 14px; }
+  .notice-box {
+    background: #f0f5fc; border-left: 3px solid #2d6cdf;
+    border-radius: 0 8px 8px 0; padding: .8rem 1rem;
+    text-align: left; font-size: 13px; color: #475467; line-height: 1.95;
+  }
+  .notice-box b { color: #2d6cdf; }
+
+  /* ── 탭 ── */
+  .tabs { display: flex; gap: 6px; background: #eef2f7; padding: 5px; border-radius: 12px; margin-bottom: 1.25rem; }
+  .tab {
+    flex: 1; padding: 10px; border: none; background: transparent; border-radius: 9px;
+    font-size: 14px; font-weight: 600; color: #8a94a6; cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .tab.on { background: #fff; color: #2d6cdf; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+  /* ── 카드 ── */
+  .card { background: #fff; border-radius: 14px; border: 1px solid #e7edf3; padding: 1.5rem; margin-bottom: 1.1rem; }
+
+  /* ── 필드 ── */
+  .field { margin-bottom: 1.1rem; }
+  .field:last-child { margin-bottom: 0; }
+  .label { font-size: 14px; font-weight: 600; color: #344054; margin-bottom: 7px; display: flex; align-items: center; gap: 4px; }
+  .req { color: #2d6cdf; font-size: 13px; }
+  .input {
+    width: 100%; padding: 11px 13px; border: 1.5px solid #d7dde5; border-radius: 9px;
+    font-size: 15px; color: #1a1a1a; background: #fff; outline: none; font-family: inherit; transition: border-color .15s;
+  }
+  .input:focus { border-color: #2d6cdf; box-shadow: 0 0 0 3px rgba(45,108,223,.1); }
+  .input.err { border-color: #e74c3c; }
+  .err-msg { font-size: 12px; color: #d92d20; margin-top: 5px; }
+
+  /* ── 날짜 선택 ── */
+  .section-label { font-size: 14px; font-weight: 600; color: #344054; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .selected-badge { font-size: 12px; background: #eaf1fb; color: #2d6cdf; padding: 2px 9px; border-radius: 20px; font-weight: 500; }
+  .day-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+  .day-btn {
+    padding: 9px 2px; border-radius: 9px; text-align: center; border: 1.5px solid #d7dde5;
+    background: #fff; cursor: pointer; transition: all .15s;
+  }
+  .day-btn:hover:not(.on) { border-color: #2d6cdf; background: #f7faff; }
+  .day-btn.on { border-color: #2d6cdf; background: #eaf1fb; }
+  .day-dom { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  .day-btn.on .day-dom { color: #2d6cdf; }
+  .day-dow { font-size: 11px; color: #98a2b3; margin-top: 1px; }
+  .day-dow.sun { color: #e0533d; }
+  .day-dow.sat { color: #3d72e0; }
+
+  /* ── 타임 선택 ── */
+  .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .time-btn {
+    padding: 13px 4px; border-radius: 9px; text-align: center; border: 1.5px solid #d7dde5;
+    background: #fff; cursor: pointer; transition: all .15s;
+  }
+  .time-btn:hover:not(.full):not(.on) { border-color: #2d6cdf; background: #f7faff; }
+  .time-btn.on { border-color: #2d6cdf; background: #eaf1fb; }
+  .time-btn.full { opacity: .45; cursor: not-allowed; background: #f3f5f8; }
+  .time-name { font-size: 15px; font-weight: 600; }
+  .time-btn.on .time-name { color: #2d6cdf; }
+  .time-btn.full .time-name { color: #aaa; }
+  .time-icon { font-size: 17px; margin-bottom: 2px; }
+  .time-remain { font-size: 11px; color: #98a2b3; margin-top: 3px; }
+  .time-closed { font-size: 11px; color: #d92d20; font-weight: 600; margin-top: 3px; }
+  .pick-hint { font-size: 12.5px; color: #98a2b3; padding: 14px; text-align: center; }
+
+  /* ── 제출 ── */
+  .submit-btn {
+    width: 100%; padding: 14px; background: #2d6cdf; color: #fff; border: none; border-radius: 10px;
+    font-size: 16px; font-weight: 700; cursor: pointer; transition: background .15s; font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .submit-btn:hover { background: #2358bd; }
+  .submit-btn:disabled { background: #a9c2ef; cursor: not-allowed; }
+
+  /* ── 완료 ── */
+  .success-wrap { text-align: center; padding: 2.5rem 1.5rem; background: #fff; border-radius: 14px; border: 1px solid #e7edf3; }
+  .success-icon { width: 60px; height: 60px; border-radius: 50%; background: #eaf6ef; margin: 0 auto 1.25rem; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .success-title { font-size: 19px; font-weight: 700; margin-bottom: 10px; }
+  .success-desc { font-size: 14px; color: #667085; line-height: 1.7; margin-bottom: 1.25rem; }
+  .receipt { background: #f5f7fa; border-radius: 10px; padding: 1rem 1.25rem; text-align: left; font-size: 14px; color: #475467; line-height: 2; margin-bottom: 1.5rem; }
+  .receipt strong { color: #1a1a1a; }
+  .reset-btn { padding: 11px 28px; background: #2d6cdf; color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .reset-btn:hover { background: #2358bd; }
+
+  .loading-bar { text-align: center; padding: 3rem; color: #aaa; font-size: 14px; }
+  .err-banner { background: #fef3f2; border: 1px solid #fda29b; border-radius: 9px; padding: 10px 14px; font-size: 13px; color: #d92d20; margin-bottom: 12px; }
+  .admin-link-wrap { text-align: center; margin-top: 1.5rem; }
+  .admin-link { font-size: 12px; color: #c4cbd6; background: none; border: none; cursor: pointer; text-decoration: underline; font-family: inherit; }
+
+  /* ── 공개 일정표 (달력) ── */
+  .cal-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .cal-sub { text-align: center; font-size: 12.5px; color: #98a2b3; margin-bottom: 14px; }
+  .cal-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e2e8f0; }
+  table.cal { border-collapse: collapse; width: 100%; min-width: 620px; background: #fff; }
+  table.cal th { background: #5b6b85; color: #fff; font-size: 13px; font-weight: 700; padding: 8px 0; text-align: center; }
+  table.cal th.sun { color: #ffd0c8; }
+  table.cal th.sat { color: #cfe0ff; }
+  table.cal td { border: 1px solid #e8edf3; vertical-align: top; width: 14.28%; height: 96px; padding: 0; }
+  td.empty { background: #fafbfc; }
+  .cal-daynum { font-size: 13px; font-weight: 700; padding: 4px 6px 2px; }
+  .cal-daynum.sun { color: #e0533d; }
+  .cal-daynum.sat { color: #3d72e0; }
+  .cal-slot { font-size: 10.5px; line-height: 1.4; padding: 1px 5px 3px; border-top: 1px dashed #eef1f5; }
+  .cal-slot .tlab { font-weight: 700; color: #5b6b85; }
+  .cal-slot .tlab.full { color: #1d9d6f; }
+  .cal-names { color: #475467; word-break: break-all; }
+  .cal-empty-names { color: #c4cbd6; }
+  .legend { font-size: 11.5px; color: #98a2b3; margin-top: 10px; text-align: center; line-height: 1.7; }
+
+  @media (max-width: 480px) {
+    .day-grid { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+    .day-dom { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="app"><div class="loading-bar">불러오는 중...</div></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, runTransaction }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* ───────── Firebase 설정 (헌혈폼과 동일 프로젝트, 별도 노드 사용) ───────── */
+const firebaseConfig = {
+  apiKey: "AIzaSyBpFEPL0IwuBzck9eOvinD5TjDMyjHNGF0",
+  authDomain: "pcdcform1.firebaseapp.com",
+  databaseURL: "https://pcdcform1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "pcdcform1",
+  storageBucket: "pcdcform1.firebasestorage.app",
+  messagingSenderId: "955693703369",
+  appId: "1:955693703369:web:7d110be6d3dfa78b6b6d18",
+  measurementId: "G-SZ61VT73SS"
+};
+const ROOT = "fast2026";           // ← 금식기도 전용 데이터 노드
+const CONFIGURED = !firebaseConfig.apiKey.startsWith("YOUR");
+const ADMIN_PW = "dream2026";
+const DEFAULT_CAP = 5;             // 타임별 기본 마감인원
+const MAX_CAP = 10;                // 관리자가 올릴 수 있는 최대
+
+/* ── 기도 기간: 2026/7/1 ~ 7/15 ── */
+const YEAR = 2026, MONTH = 7;      // 7월
+const START_DAY = 1, END_DAY = 15;
+const DOW = ["일","월","화","수","목","금","토"];
+const DAYS = (()=>{
+  const arr=[];
+  for(let d=START_DAY; d<=END_DAY; d++){
+    const dt = new Date(YEAR, MONTH-1, d);
+    arr.push({ dom:d, key:String(MONTH).padStart(2,"0")+String(d).padStart(2,"0"),
+               dow:DOW[dt.getDay()], dowIdx:dt.getDay(), md:`${MONTH}/${d}` });
+  }
+  return arr;
+})();
+const TIMES = [
+  { k:"m", label:"아침", icon:"🌅" },
+  { k:"l", label:"점심", icon:"☀️" },
+  { k:"d", label:"저녁", icon:"🌙" }
+];
+function slotKey(dayKey, timeK){ return dayKey + "_" + timeK; }
+
+/* ── 상태 ── */
+let db, slotsRef;
+let slots = {};   // { "0701_m": { cap, count, entries:{fbKey:{name,createdAt}} } }
+let view = "form";
+let saving = false;
+let submitted = null;
+let form = { name:"", day:"", time:"" };
+let errors = {};
+let copyDay = DAYS[0].key;
+
+function slotCap(sk){ const s=slots[sk]; return (s&&s.cap)?s.cap:DEFAULT_CAP; }
+function slotEntries(sk){ const s=slots[sk]; return (s&&s.entries)?s.entries:{}; }
+function slotNames(sk){ return Object.values(slotEntries(sk)).map(e=>e.name); }
+function slotCount(sk){ return slotNames(sk).length; }
+function isFull(sk){ return slotCount(sk) >= slotCap(sk); }
+
+/* ───────── 렌더 ───────── */
+function render(){
+  const app = document.getElementById("app");
+  if(!CONFIGURED){ app.innerHTML = "Firebase 설정이 필요합니다."; return; }
+  if(view==="form")     app.innerHTML = renderHeader() + renderTabs("form") + renderForm();
+  if(view==="schedule") app.innerHTML = renderHeader() + renderTabs("schedule") + renderSchedule();
+  if(view==="success")  app.innerHTML = renderHeader() + renderSuccess();
+  if(view==="admin")    app.innerHTML = renderAdmin();
+  bindEvents();
+}
+
+function renderHeader(){
+  return `
+<div class="header">
+  <div class="cross-wrap">
+    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+      <rect x="11" y="3" width="6" height="22" rx="2" fill="#2d6cdf"/>
+      <rect x="3" y="11" width="22" height="6" rx="2" fill="#2d6cdf"/>
+    </svg>
+  </div>
+  <div class="form-title">국내단기선교 릴레이 금식기도</div>
+  <div class="form-desc">선교를 앞두고 7/1(수)~7/15(수) 릴레이 금식기도로 함께 준비합니다.<br>
+  선교 일정: 7/16~19 (3박 4일)</div>
+  <div class="notice-box">
+    <b>※</b> 매일 <b>아침·점심·저녁</b> 세 타임으로 진행합니다.<br>
+    <b>※</b> 한 타임당 <b>${DEFAULT_CAP}명 이내</b>로, 모든 성도님이 한 번씩 참여하실 수 있도록 부탁드립니다.<br>
+    <b>※</b> 신청 후에는 아래 <b>‘전체 일정표’</b>에서 함께 확인할 수 있습니다.
+  </div>
+</div>`;
+}
+
+function renderTabs(active){
+  return `
+<div class="tabs">
+  <button class="tab${active==="form"?" on":""}" data-tab="form">✍️ 금식 신청</button>
+  <button class="tab${active==="schedule"?" on":""}" data-tab="schedule">📅 전체 일정표</button>
+</div>`;
+}
+
+function renderForm(){
+  const e = errors;
+  const dayBtns = DAYS.map(d=>{
+    const on = form.day===d.key;
+    const dowCls = d.dowIdx===0?"sun":d.dowIdx===6?"sat":"";
+    return `<button class="day-btn${on?" on":""}" data-day="${d.key}">
+      <div class="day-dom">${d.dom}</div>
+      <div class="day-dow ${dowCls}">${d.dow}</div>
+    </button>`;
+  }).join("");
+
+  let timeBlock;
+  if(!form.day){
+    timeBlock = `<div class="pick-hint">먼저 날짜를 선택해 주세요.</div>`;
+  } else {
+    timeBlock = `<div class="time-grid">` + TIMES.map(t=>{
+      const sk = slotKey(form.day, t.k);
+      const cnt = slotCount(sk), cap = slotCap(sk), full = isFull(sk), on = form.time===t.k;
+      return `<button class="time-btn${full?" full":""}${on?" on":""}" data-time="${t.k}" ${full?"disabled":""}>
+        <div class="time-icon">${t.icon}</div>
+        <div class="time-name">${t.label}</div>
+        ${full ? `<div class="time-closed">마감 ${cnt}/${cap}</div>`
+               : `<div class="time-remain">잔여 ${cap-cnt}명</div>`}
+      </button>`;
+    }).join("") + `</div>`;
+  }
+
+  const selDay = DAYS.find(d=>d.key===form.day);
+  const selBadge = (form.day && form.time)
+    ? `<span class="selected-badge">${selDay.md}(${selDay.dow}) ${TIMES.find(t=>t.k===form.time).label} 선택됨</span>` : "";
+
+  return `
+<div class="card">
+  <div class="field">
+    <div class="label">이름 <span class="req">*</span></div>
+    <input id="f-name" class="input${e.name?" err":""}" value="${form.name}" placeholder="성함을 입력해 주세요" maxlength="20"/>
+    ${e.name?`<div class="err-msg">${e.name}</div>`:""}
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-label">금식 날짜 <span class="req">*</span></div>
+  <div class="day-grid">${dayBtns}</div>
+  ${e.day?`<div class="err-msg" style="margin-top:7px;">${e.day}</div>`:""}
+</div>
+
+<div class="card">
+  <div class="section-label">금식 시간대 <span class="req">*</span> ${selBadge}</div>
+  ${timeBlock}
+  ${e.time?`<div class="err-msg" style="margin-top:7px;">${e.time}</div>`:""}
+</div>
+
+${e.submit?`<div class="err-banner">${e.submit}</div>`:""}
+
+<button class="submit-btn" id="btn-submit" ${saving?"disabled":""}>
+  🙏 ${saving?"저장 중...":"금식기도 신청하기"}
+</button>
+
+<div class="admin-link-wrap"><button class="admin-link" id="go-admin">관리자 페이지</button></div>`;
+}
+
+function renderSuccess(){
+  const e = submitted;
+  return `
+<div class="success-wrap">
+  <div class="success-icon">🙏</div>
+  <div class="success-title">금식기도 신청이 완료되었습니다.</div>
+  <div class="success-desc">선교를 위한 거룩한 헌신에 함께해 주셔서 감사합니다.</div>
+  ${e?`<div class="receipt">
+    <strong>이름</strong> : ${e.name}<br>
+    <strong>날짜</strong> : ${e.md} (${e.dow})<br>
+    <strong>시간대</strong> : ${e.timeLabel}
+  </div>`:""}
+  <button class="reset-btn" id="btn-reset">처음으로</button>
+  <div class="admin-link-wrap"><button class="admin-link" id="go-schedule2" style="color:#2d6cdf;">전체 일정표 보기</button></div>
+</div>`;
+}
+
+/* ── 공개 일정표 (달력) ── */
+function renderSchedule(){
+  const firstDow = new Date(YEAR, MONTH-1, START_DAY).getDay();
+  const cells = [];
+  for(let i=0;i<firstDow;i++) cells.push(null);
+  DAYS.forEach(d=>cells.push(d));
+  while(cells.length % 7 !== 0) cells.push(null);
+
+  let rows = "";
+  for(let r=0; r<cells.length/7; r++){
+    let tds = "";
+    for(let c=0;c<7;c++){
+      const d = cells[r*7+c];
+      if(!d){ tds += `<td class="empty"></td>`; continue; }
+      const dowCls = d.dowIdx===0?"sun":d.dowIdx===6?"sat":"";
+      const slotLines = TIMES.map(t=>{
+        const sk = slotKey(d.key, t.k);
+        const names = slotNames(sk), cap = slotCap(sk), full = names.length>=cap;
+        const namesHtml = names.length
+          ? `<span class="cal-names">${names.join(", ")}</span>`
+          : `<span class="cal-empty-names">-</span>`;
+        return `<div class="cal-slot"><span class="tlab${full?" full":""}">${t.label}${full?" ✓":` (${names.length}/${cap})`}</span> ${namesHtml}</div>`;
+      }).join("");
+      tds += `<td><div class="cal-daynum ${dowCls}">${d.dom}</div>${slotLines}</td>`;
+    }
+    rows += `<tr>${tds}</tr>`;
+  }
+
+  return `
+<div class="card">
+  <div class="cal-title">2026년 7월 국내단기선교<br>릴레이 금식기도 일정표</div>
+  <div class="cal-sub">7/1(수) ~ 7/15(수) · 한 타임 ${DEFAULT_CAP}명 이내</div>
+  <div class="cal-scroll">
+    <table class="cal">
+      <thead><tr>
+        <th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+  <div class="legend">✓ = 정원 마감 · 빈칸(-)은 아직 신청자가 없는 시간대입니다.<br>이 화면을 캡처해 단체방에 공유하시면 한눈에 보실 수 있어요.</div>
+</div>`;
+}
+
+/* ───────── 관리자 ───────── */
+function renderAdmin(){
+  let totalEntries=0, totalCap=0, fullSlots=0;
+  DAYS.forEach(d=>TIMES.forEach(t=>{
+    const sk=slotKey(d.key,t.k);
+    totalEntries+=slotCount(sk); totalCap+=slotCap(sk); if(isFull(sk)) fullSlots++;
+  }));
+  const remain = totalCap-totalEntries;
+
+  const dayRows = DAYS.map(d=>{
+    const cells = TIMES.map(t=>{
+      const sk=slotKey(d.key,t.k);
+      const names=slotNames(sk), cap=slotCap(sk), entries=slotEntries(sk);
+      const chips = Object.entries(entries).map(([fbKey,e])=>
+        `<span style="display:inline-flex;align-items:center;gap:3px;background:#eef2f7;border-radius:6px;padding:2px 6px;margin:2px 3px 0 0;font-size:12px;">
+          ${e.name}<button class="del-btn" data-sk="${sk}" data-key="${fbKey}" style="background:none;border:none;cursor:pointer;color:#b0b8c4;font-size:13px;padding:0;line-height:1;">✕</button>
+        </span>`).join("") || `<span style="color:#c4cbd6;font-size:12px;">없음</span>`;
+      const full = names.length>=cap;
+      return `<td style="border:1px solid #e8edf3;vertical-align:top;padding:6px 7px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:700;color:${full?'#1d9d6f':'#5b6b85'};">${t.label} ${names.length}/${cap}</span>
+          <span style="display:inline-flex;align-items:center;gap:2px;">
+            <span style="font-size:10px;color:#98a2b3;">마감</span>
+            <input type="number" class="cap-in" data-sk="${sk}" value="${cap}" min="1" max="${MAX_CAP}"
+              style="width:42px;padding:2px 4px;border:1px solid #d7dde5;border-radius:5px;font-size:12px;text-align:center;font-family:inherit;"/>
+          </span>
+        </div>
+        <div>${chips}</div>
+      </td>`;
+    }).join("");
+    const dowCls = d.dowIdx===0?"#e0533d":d.dowIdx===6?"#3d72e0":"#1a1a1a";
+    return `<tr>
+      <td style="border:1px solid #e8edf3;padding:6px 8px;white-space:nowrap;font-weight:700;color:${dowCls};background:#f7f9fc;font-size:13px;">${d.md}<br><span style="font-size:11px;font-weight:500;">(${d.dow})</span></td>
+      ${cells}
+    </tr>`;
+  }).join("");
+
+  const copyOptions = DAYS.map(d=>`<option value="${d.key}"${copyDay===d.key?" selected":""}>${d.md} (${d.dow})</option>`).join("");
+
+  return `
+<div style="padding-bottom:2rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem;">
+    <div>
+      <div style="font-size:17px;font-weight:700;">관리자 대시보드</div>
+      <div style="font-size:13px;color:#98a2b3;margin-top:2px;">릴레이 금식기도 신청 현황</div>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      <button id="btn-excel" style="padding:7px 12px;border:1px solid #1d6f42;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;color:#1d6f42;font-weight:500;">⬇ 엑셀</button>
+      <button id="go-form" style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;">신청 폼</button>
+      <button id="go-schedule" style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;">일정표</button>
+      <button id="go-logout" style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5;font-size:13px;cursor:pointer;color:#999;font-family:inherit;">로그아웃</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:1.25rem;">
+    <div style="background:#eaf1fb;border-radius:9px;padding:10px 13px;"><div style="font-size:12px;color:#185FA5;margin-bottom:3px;">총 신청</div><div style="font-size:24px;font-weight:700;color:#0C447C;">${totalEntries}</div></div>
+    <div style="background:#eaf6ef;border-radius:9px;padding:10px 13px;"><div style="font-size:12px;color:#0F6E56;margin-bottom:3px;">전체 정원</div><div style="font-size:24px;font-weight:700;color:#085041;">${totalCap}</div></div>
+    <div style="background:#FAEEDA;border-radius:9px;padding:10px 13px;"><div style="font-size:12px;color:#854F0B;margin-bottom:3px;">남은 자리</div><div style="font-size:24px;font-weight:700;color:#633806;">${remain}</div></div>
+    <div style="background:#f3eafb;border-radius:9px;padding:10px 13px;"><div style="font-size:12px;color:#6b3aa0;margin-bottom:3px;">마감된 타임</div><div style="font-size:24px;font-weight:700;color:#4d2a73;">${fullSlots}/45</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.1rem;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:9px;">전체 마감인원 일괄 설정</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:13px;color:#667085;">모든 타임 마감인원을</span>
+      <input id="bulk-cap" type="number" value="${DEFAULT_CAP}" min="1" max="${MAX_CAP}"
+        style="width:60px;padding:7px;border:1px solid #d7dde5;border-radius:8px;font-size:13px;text-align:center;font-family:inherit;"/>
+      <span style="font-size:13px;color:#667085;">명으로</span>
+      <button id="btn-bulk-cap" style="padding:7px 14px;background:#2d6cdf;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;">일괄 적용</button>
+    </div>
+    <div style="font-size:12px;color:#98a2b3;margin-top:7px;">개별 타임은 아래 표의 마감 칸에서 바로 조정할 수 있습니다 (최대 ${MAX_CAP}명).</div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.1rem;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:9px;">📋 단체방 공유용 텍스트 (일자별)</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+      <select id="copy-day" style="padding:7px 10px;border:1px solid #d7dde5;border-radius:8px;font-size:13px;font-family:inherit;">${copyOptions}</select>
+      <button id="btn-copy-day" style="padding:7px 14px;background:#fee500;color:#3c1e1e;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;">💬 카톡용 텍스트 복사</button>
+    </div>
+    <div id="copy-preview" style="white-space:pre-wrap;background:#f7f9fc;border:1px solid #e7edf3;border-radius:8px;padding:10px 12px;margin-top:9px;font-size:13px;color:#475467;line-height:1.7;"></div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="overflow-x:auto;">
+      <table style="border-collapse:collapse;width:100%;min-width:640px;font-size:13px;">
+        <thead><tr style="background:#f7f9fc;">
+          <th style="border:1px solid #e8edf3;padding:7px;font-size:12px;color:#667085;">날짜</th>
+          <th style="border:1px solid #e8edf3;padding:7px;font-size:12px;color:#667085;">아침</th>
+          <th style="border:1px solid #e8edf3;padding:7px;font-size:12px;color:#667085;">점심</th>
+          <th style="border:1px solid #e8edf3;padding:7px;font-size:12px;color:#667085;">저녁</th>
+        </tr></thead>
+        <tbody>${dayRows}</tbody>
+      </table>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#98a2b3;margin-top:8px;">이름 옆 ✕ 를 누르면 해당 신청을 삭제합니다.</div>
+</div>`;
+}
+
+/* ── 카톡용 텍스트 생성 ── */
+function buildCopyText(dayKey){
+  const d = DAYS.find(x=>x.key===dayKey);
+  let txt = `🙏 [국내단기선교 금식기도]\n${d.md}(${d.dow}) 금식기도 명단\n`;
+  TIMES.forEach(t=>{
+    const sk=slotKey(dayKey,t.k);
+    const names=slotNames(sk);
+    txt += `\n${t.icon} ${t.label} : ${names.length?names.join(", "):"(신청 가능)"}`;
+  });
+  txt += `\n\n오늘도 선교를 위해 한 마음으로 기도해 주세요.`;
+  return txt;
+}
+
+/* ───────── 이벤트 ───────── */
+function bindEvents(){
+  const $ = id => document.getElementById(id);
+
+  if(view==="form" || view==="schedule"){
+    document.querySelectorAll(".tab").forEach(b=>{
+      b.onclick = ()=>{ view = b.dataset.tab; render(); };
+    });
+  }
+
+  if(view==="form"){
+    $("f-name").oninput = e=>{ form.name=e.target.value; delete errors.name; };
+    document.querySelectorAll(".day-btn").forEach(b=>{
+      b.onclick = ()=>{ form.day=b.dataset.day; form.time=""; delete errors.day; render(); };
+    });
+    document.querySelectorAll(".time-btn:not(.full)").forEach(b=>{
+      b.onclick = ()=>{ form.time=b.dataset.time; delete errors.time; render(); };
+    });
+    $("btn-submit").onclick = handleSubmit;
+    $("go-admin").onclick = showLoginModal;
+  }
+
+  if(view==="success"){
+    $("btn-reset").onclick = ()=>{ form={name:"",day:"",time:""}; errors={}; submitted=null; view="form"; render(); };
+    const gs = $("go-schedule2"); if(gs) gs.onclick = ()=>{ view="schedule"; render(); };
+  }
+
+  if(view==="admin"){
+    $("go-form").onclick = ()=>{ view="form"; render(); };
+    $("go-schedule").onclick = ()=>{ view="schedule"; render(); };
+    $("go-logout").onclick = ()=>{ view="form"; render(); };
+    $("btn-excel").onclick = downloadExcel;
+
+    $("btn-bulk-cap").onclick = async ()=>{
+      const v = Math.max(1, Math.min(MAX_CAP, parseInt($("bulk-cap").value)||DEFAULT_CAP));
+      if(!confirm(`모든 타임의 마감인원을 ${v}명으로 설정할까요?\n(이미 신청 인원이 더 많은 타임은 그 인원까지 유지됩니다)`)) return;
+      for(const d of DAYS) for(const t of TIMES){
+        await setCap(slotKey(d.key,t.k), v);
+      }
+    };
+
+    document.querySelectorAll(".cap-in").forEach(inp=>{
+      inp.onchange = ()=>{
+        let v = Math.max(1, Math.min(MAX_CAP, parseInt(inp.value)||DEFAULT_CAP));
+        setCap(inp.dataset.sk, v);
+      };
+    });
+
+    document.querySelectorAll(".del-btn").forEach(b=>{
+      b.onclick = async ()=>{
+        if(!confirm("이 신청을 삭제할까요?")) return;
+        await runTransaction(ref(db, ROOT+"/slots/"+b.dataset.sk), (s)=>{
+          if(!s) return s;
+          const ents = { ...(s.entries||{}) };
+          delete ents[b.dataset.key];
+          return { ...s, entries: ents, count: Object.keys(ents).length };
+        });
+      };
+    });
+
+    const copySel = $("copy-day");
+    const updatePreview = ()=>{ $("copy-preview").textContent = buildCopyText(copyDay); };
+    updatePreview();
+    copySel.onchange = ()=>{ copyDay = copySel.value; updatePreview(); };
+    $("btn-copy-day").onclick = async ()=>{
+      const txt = buildCopyText(copyDay);
+      try{ await navigator.clipboard.writeText(txt); alert("복사되었습니다.\n카카오톡 단체방에 붙여넣기 하세요."); }
+      catch(_){ /* fallback */
+        const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta); alert("복사되었습니다.");
+      }
+    };
+  }
+}
+
+async function setCap(sk, cap){
+  await runTransaction(ref(db, ROOT+"/slots/"+sk), (s)=>{
+    const data = s || { count:0, entries:{} };
+    return { ...data, cap, count: Object.keys(data.entries||{}).length };
+  });
+}
+
+/* ── 엑셀(CSV) 다운로드 ── */
+function downloadExcel(){
+  const BOM="﻿";
+  const headers=["날짜","요일","시간대","이름","신청일시"];
+  const rows=[];
+  DAYS.forEach(d=>TIMES.forEach(t=>{
+    const sk=slotKey(d.key,t.k);
+    Object.values(slotEntries(sk)).forEach(e=>{
+      rows.push([d.md, d.dow, t.label, e.name, e.createdAt||""]);
+    });
+  }));
+  if(!rows.length){ alert("다운로드할 데이터가 없습니다."); return; }
+  const csv=BOM+[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="릴레이금식기도_명단.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── 로그인 모달 ── */
+function showLoginModal(){
+  let modal=document.getElementById("login-overlay");
+  if(!modal){
+    modal=document.createElement("div");
+    modal.id="login-overlay";
+    modal.style.cssText="display:flex;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;";
+    modal.innerHTML=`
+      <div style="background:#fff;border-radius:14px;padding:2rem 1.75rem;width:300px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="font-size:22px;margin-bottom:8px;">🔐</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px;">관리자 로그인</div>
+        <div style="font-size:13px;color:#888;margin-bottom:1rem;">비밀번호를 입력해 주세요</div>
+        <input id="ov-pw" type="password" placeholder="비밀번호"
+          style="width:100%;padding:9px 12px;border:1.5px solid #d7dde5;border-radius:8px;font-size:15px;margin-bottom:8px;font-family:inherit;outline:none;"/>
+        <div id="ov-err" style="font-size:12px;color:#d92d20;margin-bottom:8px;display:none;">비밀번호가 올바르지 않습니다.</div>
+        <button id="ov-login" style="width:100%;padding:11px;background:#2d6cdf;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;">로그인</button>
+        <button id="ov-cancel" style="width:100%;padding:9px;background:#f5f5f5;border:none;border-radius:9px;font-size:13px;cursor:pointer;color:#888;font-family:inherit;">취소</button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.style.display="flex";
+  const pw=document.getElementById("ov-pw"), err=document.getElementById("ov-err");
+  pw.value=""; err.style.display="none"; setTimeout(()=>pw.focus(),50);
+  function tryLogin(){
+    if(pw.value===ADMIN_PW){ modal.style.display="none"; view="admin"; render(); }
+    else { err.style.display="block"; pw.value=""; pw.focus(); }
+  }
+  document.getElementById("ov-login").onclick=tryLogin;
+  document.getElementById("ov-cancel").onclick=()=>{ modal.style.display="none"; };
+  pw.onkeydown=e=>{ if(e.key==="Enter") tryLogin(); };
+  modal.onclick=e=>{ if(e.target===modal) modal.style.display="none"; };
+}
+
+/* ── 제출 ── */
+async function handleSubmit(){
+  const errs={};
+  if(!form.name.trim()) errs.name="이름을 입력해 주세요.";
+  if(!form.day) errs.day="금식 날짜를 선택해 주세요.";
+  if(!form.time) errs.time="금식 시간대를 선택해 주세요.";
+  if(Object.keys(errs).length){ errors=errs; render(); return; }
+
+  saving=true; render();
+  try{
+    const sk=slotKey(form.day, form.time);
+    const name=form.name.trim();
+    const newEntry={ name, createdAt:new Date().toLocaleString("ko-KR") };
+
+    let txError=null;
+    const txResult=await runTransaction(ref(db, ROOT+"/slots/"+sk), (s)=>{
+      const data = s || { cap:DEFAULT_CAP, count:0, entries:{} };
+      const cap = data.cap || DEFAULT_CAP;
+      const ents = data.entries || {};
+      if(Object.keys(ents).length >= cap){ txError="full"; return; }
+      const fbKey="e"+Date.now()+Math.random().toString(36).slice(2,7);
+      const next={ ...ents, [fbKey]:newEntry };
+      return { cap, count:Object.keys(next).length, entries:next };
+    });
+
+    if(!txResult.committed){
+      errors = txError==="full"
+        ? { time:"방금 이 타임이 마감되었습니다. 다른 시간대를 선택해 주세요." }
+        : { submit:"저장 중 오류가 발생했습니다. 다시 시도해 주세요." };
+      saving=false; render(); return;
+    }
+
+    const d=DAYS.find(x=>x.key===form.day);
+    submitted={ name, md:d.md, dow:d.dow, timeLabel:TIMES.find(t=>t.k===form.time).label };
+    view="success";
+  }catch(err){
+    errors={submit:"저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."};
+  }
+  saving=false; render();
+}
+
+/* ── Firebase 초기화 ── */
+if(CONFIGURED){
+  const app=initializeApp(firebaseConfig);
+  db=getDatabase(app);
+  slotsRef=ref(db, ROOT+"/slots");
+  onValue(slotsRef, snap=>{ slots = snap.val() || {}; render(); });
+} else { render(); }
+</script>
+
+<!--
+════════════════════════════════════════════════════════════
+  사용/배포 안내
+════════════════════════════════════════════════════════════
+· 데이터는 헌혈폼과 동일한 Firebase 프로젝트(pcdcform1)의
+  "fast2026" 노드에 저장됩니다. (헌혈 데이터와 섞이지 않음)
+· 관리자 비밀번호: dream2026  (코드 상단 ADMIN_PW 에서 변경)
+· 기본 마감인원: 5명 / 최대 10명 (관리자 페이지에서 조정)
+
+배포 (무료 링크 만들기)
+  A) Netlify Drop  : https://app.netlify.com/drop 에 이 파일 드래그
+  B) GitHub Pages  : index.html 로 업로드 후 Pages 활성화
+  생성된 링크를 카카오톡 단체방에 공유하면 됩니다.
+════════════════════════════════════════════════════════════
+-->
+</body>
+</html>
