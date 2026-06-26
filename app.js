@@ -212,9 +212,13 @@ function renderSchedule(){
   ${toggle}
   ${body}
   <div class="legend">✓ = 정원 마감 · 빈칸(-)은 아직 신청자가 없는 시간대입니다.</div>
-  <div class="no-print" style="text-align:center;margin-top:14px;">
-    <button id="btn-print" style="padding:9px 18px;background:#475467;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🖨️ 일정표 인쇄 미리보기</button>
-    <div style="font-size:11.5px;color:#98a2b3;margin-top:6px;">미리보기 화면에서 인쇄하거나 PDF로 저장할 수 있어요. (용지 <b>A4 · 가로</b> 권장)</div>
+  <div class="no-print" style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+    <button id="btn-pdf" style="padding:9px 18px;background:#c0392b;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">📄 일정표 PDF 저장</button>
+    <button id="btn-print" style="padding:9px 18px;background:#475467;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🖨️ 인쇄 미리보기</button>
+  </div>
+  <div class="no-print" style="font-size:11.5px;color:#98a2b3;margin-top:8px;text-align:center;line-height:1.6;">
+    <b>PDF 저장</b>은 휴대폰에서도 바로 동작합니다. (A4 가로 한 장)<br>
+    인쇄 미리보기는 별도 창에서 인쇄·PDF 저장이 가능합니다.
   </div>
 </div>`;
 }
@@ -294,7 +298,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#eef1f5;color:#1a1a1a;}
 .toolbar button{padding:9px 16px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
 .btn-print{background:#2d6cdf;color:#fff;}
 .btn-close{background:#eef2f7;color:#475467;}
-.toolbar span{font-size:12.5px;color:#98a2b3;}
+.hint{max-width:1000px;margin:12px auto 0;padding:9px 14px;background:#fff7e6;border:1px solid #ffe1a8;border-radius:8px;font-size:12.5px;color:#8a6d3b;line-height:1.6;}
 .sheet{background:#fff;margin:16px auto;max-width:1000px;padding:16px;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.08);}
 h1{font-size:18px;font-weight:700;text-align:center;line-height:1.3;margin-bottom:5px;}
 .sub{text-align:center;font-size:12.5px;color:#98a2b3;margin-bottom:12px;}
@@ -336,9 +340,12 @@ td.empty{background:#fafbfc;}
 <title>${title}</title><style>${css}</style></head>
 <body>
 <div class="toolbar no-print">
-  <button class="btn-print" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+  <button class="btn-print" onclick="try{window.print();}catch(e){}">🖨️ 인쇄 / PDF 저장</button>
   <button class="btn-close" onclick="window.close()">닫기</button>
-  <span>아래 미리보기를 확인한 뒤 인쇄하세요. (용지: A4 · 가로)</span>
+</div>
+<div class="hint no-print">
+  인쇄 버튼이 동작하지 않으면, 브라우저 메뉴(⋮ 또는 공유)에서 <b>인쇄</b>를 선택하세요.<br>
+  용지는 <b>A4 · 가로</b>를 권장합니다. PDF로 저장도 가능합니다.
 </div>
 <div class="sheet">
   <h1>${title}</h1>
@@ -347,14 +354,16 @@ td.empty{background:#fafbfc;}
 </div>
 </body></html>`;
 
-  const w = window.open("", "_blank");
+  // 실제 주소(blob URL)를 가진 페이지로 열어야 모바일 브라우저의 인쇄가 동작함
+  const blob = new Blob([html], { type:"text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, "_blank");
   if(!w){
+    URL.revokeObjectURL(url);
     alert("미리보기 창을 열 수 없습니다.\n\n카카오톡 등 앱 안의 브라우저에서는 인쇄가 제한됩니다.\n화면 오른쪽 위 메뉴에서 'Chrome' 또는 'Safari로 열기'를 선택한 뒤 다시 시도해 주세요.");
     return;
   }
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
 }
 
 /* ───────── 신청 변경 / 취소 ───────── */
@@ -597,6 +606,8 @@ function bindEvents(){
     });
     const pb = $("btn-print");
     if(pb) pb.onclick = openPrintPreview;
+    const pdfb = $("btn-pdf");
+    if(pdfb) pdfb.onclick = downloadSchedulePdf;
   }
 
   if(view==="manage"){
@@ -722,6 +733,44 @@ async function setCap(sk, cap){
   });
 }
 
+/* ── 공통: 파일 저장(데스크톱) / 공유 시트(모바일) ── */
+function isMobileDevice(){
+  const coarse = window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
+  return coarse || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||"");
+}
+async function saveOrShareBlob(blob, filename){
+  // 모바일: 네이티브 공유/저장 시트 (파일에 저장·공유 가능)
+  if(isMobileDevice() && navigator.canShare){
+    try{
+      const file=new File([blob], filename, {type:blob.type});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({ files:[file], title:filename });
+        return;
+      }
+    }catch(e){ if(e && e.name==="AbortError") return; /* 그 외엔 다운로드로 폴백 */ }
+  }
+  // 데스크톱 등: 일반 다운로드
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=filename; a.style.display="none";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 4000);
+}
+
+/* ── 진행 표시 오버레이 ── */
+function showBusy(msg){
+  let o=document.getElementById("busy-overlay");
+  if(!o){
+    o=document.createElement("div");
+    o.id="busy-overlay";
+    o.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center;";
+    document.body.appendChild(o);
+  }
+  o.innerHTML=`<div style="background:#fff;border-radius:12px;padding:1.5rem 2rem;font-size:14px;color:#475467;box-shadow:0 12px 40px rgba(0,0,0,.25);">${msg||"처리 중..."}</div>`;
+  o.style.display="flex";
+}
+function hideBusy(){ const o=document.getElementById("busy-overlay"); if(o) o.style.display="none"; }
+
 /* ── 엑셀(CSV) 다운로드 ── */
 async function downloadExcel(){
   const BOM="﻿";
@@ -735,30 +784,78 @@ async function downloadExcel(){
   }));
   if(!rows.length){ alert("다운로드할 데이터가 없습니다."); return; }
   const csv=BOM+[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-  const filename="릴레이금식기도_명단.csv";
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
-
-  // 1) 모바일: 네이티브 공유/저장 시트 우선 시도 (파일로 저장·공유 가능)
-  try{
-    const file=new File([blob], filename, {type:"text/csv"});
-    if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({ files:[file], title:"릴레이 금식기도 명단" });
-      return;
-    }
-  }catch(e){
-    if(e && e.name==="AbortError") return;  // 사용자가 공유를 취소한 경우
-    // 그 외 오류는 아래 일반 다운로드로 폴백
-  }
-
-  // 2) 일반 다운로드 (PC / 모바일 브라우저)
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url; a.download=filename; a.style.display="none";
-  document.body.appendChild(a);
-  a.click();
-  // 모바일에서 다운로드가 시작되기 전에 해제되지 않도록 지연 후 정리
-  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 4000);
+  await saveOrShareBlob(blob, "릴레이금식기도_명단.csv");
 }
+
+/* ── 일정표 PDF 저장 (A4 가로 1장) ── */
+async function downloadSchedulePdf(){
+  showBusy("📄 PDF를 만드는 중입니다...");
+  let stage=null;
+  try{
+    // 라이브러리는 클릭 시에만 CDN에서 로드 (평소 로딩 가볍게)
+    const [h2cMod, jspdfMod] = await Promise.all([
+      import("https://esm.sh/html2canvas@1.4.1"),
+      import("https://esm.sh/jspdf@2.5.1")
+    ]);
+    const html2canvas = h2cMod.default;
+    const jsPDF = jspdfMod.jsPDF;
+
+    // 화면 밖에 인쇄용 노드를 만들어 캡처
+    stage=document.createElement("div");
+    stage.id="pdf-stage";
+    stage.style.cssText="position:fixed;left:-10000px;top:0;width:1122px;background:#fff;padding:16px;";
+    stage.innerHTML=`<style>${PDF_STAGE_CSS}</style>
+      <h1>2026년 7월 국내단기선교 릴레이 금식기도 일정표</h1>
+      <div class="sub">7/1(수) ~ 7/15(수) · 한 타임 ${DEFAULT_CAP}명 이내</div>
+      ${renderScheduleCal()}`;
+    document.body.appendChild(stage);
+
+    const canvas=await html2canvas(stage, { scale:2, backgroundColor:"#ffffff", useCORS:true });
+    document.body.removeChild(stage); stage=null;
+
+    const pdf=new jsPDF({ orientation:"landscape", unit:"mm", format:"a4" });
+    const pageW=pdf.internal.pageSize.getWidth();   // 297
+    const pageH=pdf.internal.pageSize.getHeight();  // 210
+    const margin=5;
+    const availW=pageW-margin*2, availH=pageH-margin*2;
+    const ratio=Math.min(availW/canvas.width, availH/canvas.height);
+    const w=canvas.width*ratio, h=canvas.height*ratio;
+    const x=(pageW-w)/2, y=margin;
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", x, y, w, h);
+
+    const blob=pdf.output("blob");
+    hideBusy();
+    await saveOrShareBlob(blob, "릴레이금식기도_일정표.pdf");
+  }catch(err){
+    if(stage && stage.parentNode) stage.parentNode.removeChild(stage);
+    hideBusy();
+    alert("PDF 생성 중 오류가 발생했습니다.\n인터넷 연결을 확인한 뒤 다시 시도해 주세요.\n\n("+(err&&err.message?err.message:err)+")");
+  }
+}
+
+/* PDF용 확대 스타일 (이름 크게) */
+const PDF_STAGE_CSS = `
+#pdf-stage{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#1a1a1a;}
+#pdf-stage *{box-sizing:border-box;}
+#pdf-stage h1{font-size:24px;font-weight:700;text-align:center;margin:0 0 5px;}
+#pdf-stage .sub{text-align:center;font-size:14px;color:#888;margin-bottom:12px;}
+#pdf-stage .cal-scroll{border:1px solid #999;border-radius:6px;overflow:hidden;}
+#pdf-stage table.cal{border-collapse:collapse;width:100%;table-layout:fixed;}
+#pdf-stage table.cal th{background:#5b6b85;color:#fff;font-size:16px;font-weight:700;padding:7px 0;text-align:center;}
+#pdf-stage table.cal th.sun{color:#ffd0c8;}
+#pdf-stage table.cal th.sat{color:#cfe0ff;}
+#pdf-stage table.cal td{border:1px solid #999;vertical-align:top;height:120px;padding:0;}
+#pdf-stage td.empty{background:#fafbfc;}
+#pdf-stage .cal-daynum{font-size:17px;font-weight:700;padding:3px 7px 1px;}
+#pdf-stage .cal-daynum.sun{color:#e0533d;}
+#pdf-stage .cal-daynum.sat{color:#3d72e0;}
+#pdf-stage .cal-slot{font-size:16px;line-height:1.3;padding:2px 7px 5px;border-top:1px dashed #ddd;}
+#pdf-stage .cal-slot .tlab{display:block;font-size:12px;font-weight:700;color:#5b6b85;}
+#pdf-stage .cal-slot .tlab.full{color:#1d9d6f;}
+#pdf-stage .cal-names{color:#000;margin-top:1px;}
+#pdf-stage .cal-name{display:inline-block;white-space:nowrap;font-size:18px;}
+#pdf-stage .cal-empty-names{color:#bbb;}`;
 
 /* ── 로그인 모달 ── */
 function showLoginModal(){
