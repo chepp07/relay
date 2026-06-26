@@ -119,9 +119,10 @@ td.empty { background: #fafbfc; }
 .cal-daynum.sun { color: #e0533d; }
 .cal-daynum.sat { color: #3d72e0; }
 .cal-slot { font-size: 9.5px; line-height: 1.35; padding: 1px 3px 2px; border-top: 1px dashed #eef1f5; }
-.cal-slot .tlab { font-weight: 700; color: #5b6b85; }
+.cal-slot .tlab { display: block; font-weight: 700; color: #5b6b85; }
 .cal-slot .tlab.full { color: #1d9d6f; }
-.cal-names { color: #475467; word-break: break-all; }
+.cal-names { color: #475467; margin-top: 1px; }
+.cal-name { display: inline-block; white-space: nowrap; }
 .cal-empty-names { color: #c4cbd6; }
 
 @media (max-width: 420px) {

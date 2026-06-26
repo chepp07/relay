@@ -212,9 +212,9 @@ function renderScheduleCal(){
         const sk = slotKey(d.key, t.k);
         const names = slotNames(sk), cap = slotCap(sk), full = names.length>=cap;
         const namesHtml = names.length
-          ? `<span class="cal-names">${names.join(", ")}</span>`
-          : `<span class="cal-empty-names">-</span>`;
-        return `<div class="cal-slot"><span class="tlab${full?" full":""}">${t.label}${full?" ✓":` (${names.length}/${cap})`}</span> ${namesHtml}</div>`;
+          ? `<div class="cal-names">${names.map((n,i)=>`<span class="cal-name">${n}${i<names.length-1?",":""}</span>`).join(" ")}</div>`
+          : `<div class="cal-empty-names">-</div>`;
+        return `<div class="cal-slot"><span class="tlab${full?" full":""}">${t.label}${full?" ✓":` (${names.length}/${cap})`}</span>${namesHtml}</div>`;
       }).join("");
       tds += `<td><div class="cal-daynum ${dowCls}">${d.dom}</div>${slotLines}</td>`;
     }
